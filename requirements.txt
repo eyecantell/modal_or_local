@@ -1,0 +1,4 @@
+
+GitPython==3.1.40
+modal~=0.62.211
+pytest==6.2.5

@@ -1,0 +1,30 @@
+{
+    "name": "modal_or_local Python Development",
+    "postCreateCommand": "pip install -e . && python3 scripts/_create_modal_toml_file.py",
+    
+    "build": {
+      "dockerfile": "Dockerfile",
+      "context": ".."
+    },
+    
+    "remoteEnv": {
+    // To set the MODAL_TOKEN_INFO environment variable, need to 'pip install toml-cli' on dev machine and add the following lines to your .bashrc:
+    /* 
+      # Set and export the MODAL_TOKEN_INFO environment variable
+      if [ -f ~/.modal.toml ]; then
+        export MODAL_TOKEN_INFO=$(toml get --toml-path ~/.modal.toml)
+      fi
+    */
+    "MODAL_TOKEN_INFO": "${localEnv:MODAL_TOKEN_INFO}"
+    },
+    
+    "mounts": [],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-azuretools.vscode-docker",
+                "ms-python.python"
+            ]
+        }
+    }
+  }
