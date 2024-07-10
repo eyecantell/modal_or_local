@@ -52,9 +52,11 @@ def test_listdir():
 @app.function(image=image, volumes={REMOTE_NOTICES_MOUNT_DIR: volume})
 def test_create_or_remove_dir():
     '''Create and remove directory within a volume'''
-    mol_remote.create_directory("/my/test")
-    assert mol_remote.file_or_dir_exists("/my/test")
-    mol_remote.remove_file_or_directory()
+    for dir_to_create in ["mytestdir", "/my/test/a/b/c"]:
+        mol_remote.create_directory(dir_to_create)
+        assert mol_remote.file_or_dir_exists(dir_to_create)
+        mol_remote.remove_file_or_directory(dir_to_create)
+        assert not mol_remote.file_or_dir_exists(dir_to_create)
 
 
 @app.local_entrypoint()
@@ -62,7 +64,8 @@ def main():
     print("Running", __file__, "locally" if modal.is_local() else "remotely")
     
     #test_write_and_read_volume_file.local()
-    test_write_and_read_volume_file.remote()
-    #test_listdir.remote()
+    #test_write_and_read_volume_file.remote()
     #test_create_or_remove_dir.local()
+    #test_create_or_remove_dir.remote()
+    test_listdir.remote()
     

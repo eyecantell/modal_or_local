@@ -16,7 +16,7 @@ class ModalOrLocal:
         self.volume_name = volume_name # Name of the volume to be used. If None the local filesystem will be used
         self.volume_mount_dir = volume_mount_dir  # Directory used to mount this volume
         self.volume = None
-        if volume_name is not None:
+        if volume_name:
             self.volume = modal.Volume.from_name(volume_name, create_if_missing=True)
 
         print(f"ModalOrLocal init setting {volume_name=}, {volume_mount_dir=}")
@@ -24,7 +24,7 @@ class ModalOrLocal:
 
     def read_json_file(self, json_file_full_path : str) -> Any:
         '''Load json from the given file - works on filesystem or on volume'''
-        if modal.is_local() and self.volume is not None:
+        if modal.is_local() and self.volume:
             # Read using the modal volume tools - volume.read_file() apparently expects a "relative" path from / and does not use the volume mount dir in path
             prepped_path = self.path_without_volume_mount_dir(json_file_full_path)
             if prepped_path.startswith('/'): prepped_path=prepped_path.replace("/","",1)
@@ -35,7 +35,7 @@ class ModalOrLocal:
 
             metadata = json.loads(file_contents)
         else: 
-            # Reading from local filesystem, or reading (from volume) while running remotely
+            # Reading from local filesystem, or reading (from mounted volume) while running remotely
             print(f"Reading {json_file_full_path=} with open()", "locally" if modal.is_local() else "remotely")
             with open(json_file_full_path, 'r') as f:
                 metadata = json.load(f)
@@ -44,7 +44,7 @@ class ModalOrLocal:
     def write_json_file(self, json_file_full_path: str, metadata : Any, force: bool = True):
         '''Write a json file to either the local filesystem or to a volume'''
 
-        if modal.is_local() and self.volume is not None:
+        if modal.is_local() and self.volume:
             # Reading locally from volume
             prepped_path = self.path_without_volume_mount_dir(json_file_full_path)
             prepped_path = os.path.normpath(os.path.join('/', prepped_path))
@@ -56,25 +56,25 @@ class ModalOrLocal:
                 batch.put_file(BytesIO(json_encoded), prepped_path)
             print("Put metadata file to", prepped_path)
 
-        else: # Writing to local filesystem or writing to volume while running remotely
+        else: # Writing to local filesystem or writing to mounted volume while running remotely
 
             with open(json_file_full_path, 'w') as f:
                 json.dump(metadata, f, indent=4)
             print("Wrote metadata to", json_file_full_path)
         
 
-    def remove_file_or_directory(self, file_or_dir_to_remove_full_path: str, recursive: bool = False):
+    def remove_file_or_directory(self, file_or_dir_to_remove_full_path: str):
         '''Remove the given full path from the filesystem or modal volume'''
         # Remove the given file or directory
-        if modal.is_local() and self.volume is not None:
+        if modal.is_local() and self.volume:
             # Remove the file/dir from the volume
             # Make sure there is a leading slash in the case of a bare filename passed
             
             prepped_path = self.path_without_volume_mount_dir(file_or_dir_to_remove_full_path)
             print(f"Removing",prepped_path,"from volume", self.volume_name)
-            self.volume.remove_file(prepped_path, recursive)
+            self.volume.remove_file(prepped_path, recursive=True)
         else:
-            # Remove directly from the filesystem
+            # Remove directly from the filesystem or mounted volume
             print(f"Removing from filesystem:",file_or_dir_to_remove_full_path)
             if os.path.isfile(file_or_dir_to_remove_full_path): os.remove(file_or_dir_to_remove_full_path)
             if os.path.isdir(file_or_dir_to_remove_full_path):
@@ -84,13 +84,13 @@ class ModalOrLocal:
 
     def file_or_dir_exists(self, full_path) -> bool:
         '''Returns true if the passed file or directory exists in the volume/local filesystem'''
-        if modal.is_local() and self.volume is not None:
+        if modal.is_local() and self.volume:
             prepped_path = self.path_without_volume_mount_dir(full_path)
             filename_wanted = os.path.basename(prepped_path)
             volume_dir = os.path.normpath(os.path.join('/', os.path.dirname(prepped_path)))
 
             logger.debug(f"file_or_dir_exists: searching for '%s' in '%s' '%s'", filename_wanted, self.volume_name, volume_dir)
-            # Look in the volume by iterating (hopefully better api tools will come at some point)
+            # Look in the volume by iterating
             for f in self.volume.iterdir(volume_dir):
                 filename = os.path.basename(f.path)
                 logger.debug(f"    file_or_dir_exists: see filename = '%s'", filename)
@@ -98,7 +98,8 @@ class ModalOrLocal:
                     logger.debug(f"    file_or_dir_exists: found {filename} returning True") 
                     return True     
         else:
-            # Look in the local filesystem
+            # Look in the local filesystem or mounted volume
+            logger.debug(f"file_or_dir_exists: checking for {full_path=}")
             if os.path.isfile(full_path) : return True
             if os.path.isdir(full_path) : return True
 
@@ -116,9 +117,8 @@ class ModalOrLocal:
     
     def listdir(self, dir_full_path : str = None, return_full_paths: bool = False) -> List[str]:
         '''Return a list of files/directories in the given path on either the filesystem or a modal volume'''
-        # Unfortunately modal does not off a way to list files in a directory other than iterdir, so we use that here
         list_to_return = []
-        if self.volume:
+        if modal.is_local() and self.volume:
             # Remove the volume mount dir if it was passed as part of the full path
             prepped_path = self.path_without_volume_mount_dir(dir_full_path)
             for f in self.volume.iterdir(prepped_path):
@@ -139,7 +139,7 @@ class ModalOrLocal:
     def create_directory(self, dir_full_path : str):
         '''Create a directory (and parent dirs as needed) on the local filesystem or on a volume'''
 
-        if modal.is_local() and self.volume is not None:
+        if modal.is_local() and self.volume:
             # Create the notice dir on the volume
             # Remove the volume mount dir if it was passed as part of the full path
             prepped_path = self.path_without_volume_mount_dir(dir_full_path)
