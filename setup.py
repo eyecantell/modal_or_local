@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 # Read the dependencies from the requirements.txt file
 with open('requirements.txt') as f:
-    requirements = f.read().splitlines()
+    requirements = [req for req in f.read().splitlines() if req]
 
 setup(
     name='modal_or_local',

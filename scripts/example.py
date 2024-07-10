@@ -1,5 +1,4 @@
 import modal
-import os
 from modal_or_local import setup_image, ModalOrLocal
 
 image = setup_image()
