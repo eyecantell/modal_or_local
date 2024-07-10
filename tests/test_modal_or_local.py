@@ -17,13 +17,13 @@ mol_local = ModalOrLocal()
 mol_remote = ModalOrLocal(volume_name=REMOTE_NOTICES_VOLUME_NAME, volume_mount_dir = REMOTE_NOTICES_MOUNT_DIR)
 
 @app.function(image=image, volumes={REMOTE_NOTICES_MOUNT_DIR: volume}) 
-def test_write_and_read_volume_file():
+def test_write_and_read_volume_json_file():
     '''Write a json file to a modal volume then read it (should be able to run both .local() and .remote())'''
 
     print("Running test_read_file_from_volume", "locally" if modal.is_local() else "remotely")
     test_json_data = json.loads('{"a":1, "b":2}')
 
-    json_file_full_path = os.path.join(REMOTE_NOTICES_MOUNT_DIR, "test_write_and_read_volume_file.json")
+    json_file_full_path = os.path.join(REMOTE_NOTICES_MOUNT_DIR, "test_write_and_read_volume_json_file.json")
 
     mol_remote.write_json_file(json_file_full_path, test_json_data, force=True)
 
@@ -37,10 +37,37 @@ def test_write_and_read_volume_file():
     # Remove the test file
     mol_remote.remove_file_or_directory(json_file_full_path)
 
-    # Cannot check that file was actually deleted without a reload of the volume, not sure how to use reload() (get running function error) so commenting out
-    #assert not mol_remote.file_or_dir_exists(json_file_full_path)
+    # Check that file was actually deleted
+    assert not mol_remote.file_or_dir_exists(json_file_full_path)
 
     print("Running test_read_file_from_volume", "locally" if modal.is_local() else "remotely", "finished")
+
+@app.function(image=image, volumes={REMOTE_NOTICES_MOUNT_DIR: volume}) 
+def test_write_and_read_volume_txt_file():
+    '''Write a text file to a modal volume then read it (should be able to run both .local() and .remote())'''
+
+    print("Running test_write_and_read_volume_txt_file", "locally" if modal.is_local() else "remotely")
+
+    file_full_path = os.path.join(REMOTE_NOTICES_MOUNT_DIR, "test_write_and_read_volume_txt_file.txt")
+    text_to_encode = "This is some text"
+
+    mol_remote.write_file(file_full_path, text_to_encode.encode(), force=True)
+
+    assert mol_remote.file_or_dir_exists(file_full_path)
+
+    content = mol_remote.read_file(file_full_path)
+    file_text = content.decode('utf-8')
+
+    assert file_text is not None
+    assert file_text == text_to_encode
+
+    # Remove the test file
+    mol_remote.remove_file_or_directory(file_full_path)
+
+    # Cannot check that file was actually deleted without a reload of the volume, not sure how to use reload() (get running function error) so commenting out
+    assert not mol_remote.file_or_dir_exists(file_full_path)
+
+    print("Running test_write_and_read_volume_txt_file", "locally" if modal.is_local() else "remotely", "finished")
 
 @app.function(image=image, volumes={REMOTE_NOTICES_MOUNT_DIR: volume})
 def test_listdir():
@@ -63,9 +90,11 @@ def test_create_or_remove_dir():
 def main():
     print("Running", __file__, "locally" if modal.is_local() else "remotely")
     
-    #test_write_and_read_volume_file.local()
-    #test_write_and_read_volume_file.remote()
+    #test_write_and_read_volume_json_file.local()
+    #test_write_and_read_volume_json_file.remote()
     #test_create_or_remove_dir.local()
     #test_create_or_remove_dir.remote()
-    test_listdir.remote()
+    test_write_and_read_volume_txt_file.local()
+    test_write_and_read_volume_txt_file.remote()
+    #test_listdir.remote()
     

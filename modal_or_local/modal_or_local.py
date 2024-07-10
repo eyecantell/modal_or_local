@@ -41,12 +41,12 @@ class ModalOrLocal:
                 metadata = json.load(f)
         return metadata
         
-    def write_json_file(self, json_file_full_path: str, metadata : Any, force: bool = True):
+    def write_json_file(self, new_json_file_full_path: str, metadata : Any, force: bool = True):
         '''Write a json file to either the local filesystem or to a volume'''
 
         if modal.is_local() and self.volume:
             # Reading locally from volume
-            prepped_path = self.path_without_volume_mount_dir(json_file_full_path)
+            prepped_path = self.path_without_volume_mount_dir(new_json_file_full_path)
             prepped_path = os.path.normpath(os.path.join('/', prepped_path))
             logger.debug("write_json_file: prepped path is '%s'", prepped_path)
 
@@ -54,14 +54,50 @@ class ModalOrLocal:
             
             with self.volume.batch_upload(force=force) as batch:
                 batch.put_file(BytesIO(json_encoded), prepped_path)
-            print("Put metadata file to", prepped_path)
+            print("Put json metadata file to", prepped_path)
 
         else: # Writing to local filesystem or writing to mounted volume while running remotely
 
-            with open(json_file_full_path, 'w') as f:
+            with open(new_json_file_full_path, 'w') as f:
                 json.dump(metadata, f, indent=4)
-            print("Wrote metadata to", json_file_full_path)
-        
+            print("Wrote metadata to", new_json_file_full_path)
+
+    def write_file(self, new_file_full_path: str, encoded_content : Any, force: bool = True):
+        '''Write the encoded content to a file in either the local filesystem or to a volume'''
+
+        if modal.is_local() and self.volume:
+            # Reading locally from volume
+            prepped_path = self.path_without_volume_mount_dir(new_file_full_path)
+            prepped_path = os.path.normpath(os.path.join('/', prepped_path))
+            logger.debug("write_file: prepped path is '%s'", prepped_path)
+            
+            with self.volume.batch_upload(force=force) as batch:
+                batch.put_file(BytesIO(encoded_content), prepped_path)
+            print("Put encoded_content to file at", prepped_path)
+
+        else: # Writing to local filesystem or writing to mounted volume while running remotely
+
+            with open(new_file_full_path, 'w') as f:
+                f.write(encoded_content)
+            print("Wrote encoded_content to", new_file_full_path)
+
+    def read_file(self, file_full_path : str) -> Any:
+        '''Load content from the given file - works on filesystem or on volume'''
+        if modal.is_local() and self.volume:
+            # Read using the modal volume tools - volume.read_file() apparently expects a "relative" path from / and does not use the volume mount dir in path
+            prepped_path = self.path_without_volume_mount_dir(file_full_path)
+            if prepped_path.startswith('/'): prepped_path=prepped_path.replace("/","",1)
+            print(f"Reading {prepped_path=} with read_file() from {self.volume_name=}", "locally" if modal.is_local() else "remotely")
+            file_contents = b''
+            for chunk in self.volume.read_file(path=prepped_path):
+                file_contents += chunk
+
+        else: 
+            # Reading from local filesystem, or reading (from mounted volume) while running remotely
+            print(f"Reading {file_full_path=} with open()", "locally" if modal.is_local() else "remotely")
+            with open(file_full_path, 'rb') as f:
+                file_contents = f.read()
+        return file_contents
 
     def remove_file_or_directory(self, file_or_dir_to_remove_full_path: str):
         '''Remove the given full path from the filesystem or modal volume'''
