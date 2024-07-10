@@ -54,13 +54,14 @@ class ModalOrLocal:
             
             with self.volume.batch_upload(force=force) as batch:
                 batch.put_file(BytesIO(json_encoded), prepped_path)
+            print("Put metadata file to", prepped_path)
 
         else: # Writing to local filesystem or writing to volume while running remotely
 
             with open(json_file_full_path, 'w') as f:
                 json.dump(metadata, f, indent=4)
-
-        print("Wrote metadata to", json_file_full_path)
+            print("Wrote metadata to", json_file_full_path)
+        
 
     def remove_file_or_directory(self, file_or_dir_to_remove_full_path: str, recursive: bool = False):
         '''Remove the given full path from the filesystem or modal volume'''
@@ -82,17 +83,17 @@ class ModalOrLocal:
                 
 
     def file_or_dir_exists(self, full_path) -> bool:
-        '''Returns true if the passed file or directory exists on volume or local filesystem'''
-        if self.volume is not None:
+        '''Returns true if the passed file or directory exists in the volume/local filesystem'''
+        if modal.is_local() and self.volume is not None:
             prepped_path = self.path_without_volume_mount_dir(full_path)
             filename_wanted = os.path.basename(prepped_path)
             volume_dir = os.path.normpath(os.path.join('/', os.path.dirname(prepped_path)))
 
-            logger.debug(f"file_or_dir_exists: searching for '%s' in '%s' '%s'", prepped_path, self.volume_name, volume_dir)
+            logger.debug(f"file_or_dir_exists: searching for '%s' in '%s' '%s'", filename_wanted, self.volume_name, volume_dir)
             # Look in the volume by iterating (hopefully better api tools will come at some point)
             for f in self.volume.iterdir(volume_dir):
                 filename = os.path.basename(f.path)
-                #logger.debug(f"    file_or_dir_exists: see filename = '%s'", filename)
+                logger.debug(f"    file_or_dir_exists: see filename = '%s'", filename)
                 if filename == filename_wanted:
                     logger.debug(f"    file_or_dir_exists: found {filename} returning True") 
                     return True     

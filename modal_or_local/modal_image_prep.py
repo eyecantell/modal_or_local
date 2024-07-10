@@ -29,7 +29,7 @@ def setup_image()->Image:
         .workdir("/root")
         .env({"MY_ENV_VAR": "value"})
         # Note the latest samscrape will be pulled automatically in summary_bot
-        .run_commands("pwd && git clone https://github.com/eyecantell/modal_or_local.git", force_build=True)
+        .run_commands("pwd && git clone https://github.com/eyecantell/modal_or_local.git", force_build=False)
     )
 
     return image

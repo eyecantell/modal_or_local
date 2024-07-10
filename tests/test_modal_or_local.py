@@ -23,7 +23,7 @@ def test_write_and_read_volume_file():
     print("Running test_read_file_from_volume", "locally" if modal.is_local() else "remotely")
     test_json_data = json.loads('{"a":1, "b":2}')
 
-    json_file_full_path = "/test_write_and_read_volume_file.json"
+    json_file_full_path = os.path.join(REMOTE_NOTICES_MOUNT_DIR, "test_write_and_read_volume_file.json")
 
     mol_remote.write_json_file(json_file_full_path, test_json_data, force=True)
 
@@ -61,7 +61,7 @@ def test_create_or_remove_dir():
 def main():
     print("Running", __file__, "locally" if modal.is_local() else "remotely")
     
-    test_write_and_read_volume_file.local()
+    #test_write_and_read_volume_file.local()
     test_write_and_read_volume_file.remote()
     #test_listdir.remote()
     #test_create_or_remove_dir.local()
