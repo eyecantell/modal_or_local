@@ -13,7 +13,7 @@ requirements_file = os.path.join(parent_dir,'requirements.txt')
 if is_local() and os.path.isfile(requirements_file):
     with open(requirements_file, 'r') as f:
         requirements = [req for req in f.read().splitlines() if req]
-        print(f"{requirements=}")
+        #print(f"{requirements=}")
 else:
     requirements = []
 
@@ -28,7 +28,7 @@ def setup_image()->Image:
         .pip_install(*requirements)
         .workdir("/root")
         .env({"MY_ENV_VAR": "value"})
-        .run_commands("pwd && git clone https://github.com/eyecantell/modal_or_local.git", force_build=True)
+        .run_commands("pwd && git clone https://github.com/eyecantell/modal_or_local.git", force_build=False)
     )
 
     return image

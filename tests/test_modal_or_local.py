@@ -13,7 +13,6 @@ REMOTE_NOTICES_VOLUME_NAME = "my_modal_test_volume"
 volume = modal.Volume.from_name(REMOTE_NOTICES_VOLUME_NAME, create_if_missing=True)
 REMOTE_NOTICES_MOUNT_DIR = "/test_mnt_dir"
 
-mol_local = ModalOrLocal()
 mol_remote = ModalOrLocal(volume_name=REMOTE_NOTICES_VOLUME_NAME, volume_mount_dir = REMOTE_NOTICES_MOUNT_DIR)
 
 @app.function(image=image, volumes={REMOTE_NOTICES_MOUNT_DIR: volume}) 
@@ -98,27 +97,31 @@ def test_listdir():
 
     # List the directory and check that all of the expected files are in the list
     found_filenames = mol_remote.listdir(temp_dir)
-    print(f"{found_filenames=}")
+    #print(f"{found_filenames=}")
     for filename in filenames_created:
         assert filename in found_filenames, "Expected filename " + filename + " not found in listdir " + str(found_filenames)
 
     # List the directory with full path option and check that all of the expected files are in the list
     found_filenames_full_path = mol_remote.listdir(temp_dir, return_full_paths=True)
-    print(f"{found_filenames_full_path=}")
+    #print(f"{found_filenames_full_path=}")
     for filename in filenames_created:
         full_path = os.path.join(temp_dir, filename)
         assert full_path in found_filenames_full_path, "Expected full path " + full_path + " not found in listdir " + str(found_filenames_full_path)
+
+    # Remove the temp test dir
+    mol_remote.remove_file_or_directory(temp_dir)
+
 
 @app.local_entrypoint()
 def main():
     print("Running", __file__, "locally" if modal.is_local() else "remotely")
     
-    #test_write_and_read_volume_json_file.local()
-    #test_write_and_read_volume_json_file.remote()
-    #test_create_or_remove_dir.local()
-    #test_create_or_remove_dir.remote()
-    #test_write_and_read_volume_txt_file.local()
-    #test_write_and_read_volume_txt_file.remote()
+    test_write_and_read_volume_json_file.local()
+    test_write_and_read_volume_json_file.remote()
+    test_create_or_remove_dir.local()
+    test_create_or_remove_dir.remote()
+    test_write_and_read_volume_txt_file.local()
+    test_write_and_read_volume_txt_file.remote()
     test_listdir.local()
     test_listdir.remote()
     
