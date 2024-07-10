@@ -77,7 +77,7 @@ class ModalOrLocal:
 
         else: # Writing to local filesystem or writing to mounted volume while running remotely
 
-            with open(new_file_full_path, 'w') as f:
+            with open(new_file_full_path, 'wb') as f:
                 f.write(encoded_content)
             print("Wrote encoded_content to", new_file_full_path)
 
