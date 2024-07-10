@@ -70,21 +70,44 @@ def test_write_and_read_volume_txt_file():
     print("Running test_write_and_read_volume_txt_file", "locally" if modal.is_local() else "remotely", "finished")
 
 @app.function(image=image, volumes={REMOTE_NOTICES_MOUNT_DIR: volume})
-def test_listdir():
-    for prefix in ["a", "b", "c"]:
-        full_path = os.path.join("/", mol_remote.volume_mount_dir, "test_listdir_data", prefix + ".txt")
-        with open(full_path, 'w') as f:
-            f.write(prefix + ": this is a test") 
-
-@app.function(image=image, volumes={REMOTE_NOTICES_MOUNT_DIR: volume})
 def test_create_or_remove_dir():
     '''Create and remove directory within a volume'''
-    for dir_to_create in ["mytestdir", "/my/test/a/b/c"]:
+    for dir_to_create in ["test_create_or_remove_dir_data", "/test_create_or_remove_dir_data/test/a/b/c"]:
         mol_remote.create_directory(dir_to_create)
         assert mol_remote.file_or_dir_exists(dir_to_create)
         mol_remote.remove_file_or_directory(dir_to_create)
         assert not mol_remote.file_or_dir_exists(dir_to_create)
 
+    # Remove the "test_create_or_remove_dir_data" test dir
+    mol_remote.remove_file_or_directory(os.path.join(REMOTE_NOTICES_MOUNT_DIR, "test_create_or_remove_dir_data"))
+
+@app.function(image=image, volumes={REMOTE_NOTICES_MOUNT_DIR: volume})
+def test_listdir():
+    '''Create files in a temp directory, then read the list of files in the directory'''
+    temp_dir = os.path.join(mol_remote.volume_mount_dir, "test_listdir_data")
+    mol_remote.create_directory(temp_dir)
+
+    # Add some files to the temp directory on the volume
+    filenames_created = []
+    for prefix in ["a", "b", "c"]:
+        filename = prefix + ".txt"
+        filenames_created.append(filename)
+        full_path = os.path.join(temp_dir, filename)
+        file_text = "this is some text in file " + prefix
+        mol_remote.write_file(full_path, file_text.encode())
+
+    # List the directory and check that all of the expected files are in the list
+    found_filenames = mol_remote.listdir(temp_dir)
+    print(f"{found_filenames=}")
+    for filename in filenames_created:
+        assert filename in found_filenames, "Expected filename " + filename + " not found in listdir " + str(found_filenames)
+
+    # List the directory with full path option and check that all of the expected files are in the list
+    found_filenames_full_path = mol_remote.listdir(temp_dir, return_full_paths=True)
+    print(f"{found_filenames_full_path=}")
+    for filename in filenames_created:
+        full_path = os.path.join(temp_dir, filename)
+        assert full_path in found_filenames_full_path, "Expected full path " + full_path + " not found in listdir " + str(found_filenames_full_path)
 
 @app.local_entrypoint()
 def main():
@@ -94,7 +117,8 @@ def main():
     #test_write_and_read_volume_json_file.remote()
     #test_create_or_remove_dir.local()
     #test_create_or_remove_dir.remote()
-    test_write_and_read_volume_txt_file.local()
-    test_write_and_read_volume_txt_file.remote()
-    #test_listdir.remote()
+    #test_write_and_read_volume_txt_file.local()
+    #test_write_and_read_volume_txt_file.remote()
+    test_listdir.local()
+    test_listdir.remote()
     

@@ -54,13 +54,13 @@ class ModalOrLocal:
             
             with self.volume.batch_upload(force=force) as batch:
                 batch.put_file(BytesIO(json_encoded), prepped_path)
-            print("Put json metadata file to", prepped_path)
+            #print("Put json metadata file to", prepped_path)
 
         else: # Writing to local filesystem or writing to mounted volume while running remotely
 
             with open(new_json_file_full_path, 'w') as f:
                 json.dump(metadata, f, indent=4)
-            print("Wrote metadata to", new_json_file_full_path)
+            #print("Wrote metadata to", new_json_file_full_path)
 
     def write_file(self, new_file_full_path: str, encoded_content : Any, force: bool = True):
         '''Write the encoded content to a file in either the local filesystem or to a volume'''
@@ -73,13 +73,13 @@ class ModalOrLocal:
             
             with self.volume.batch_upload(force=force) as batch:
                 batch.put_file(BytesIO(encoded_content), prepped_path)
-            print("Put encoded_content to file at", prepped_path)
+            #print("Put encoded_content to file at", prepped_path)
 
         else: # Writing to local filesystem or writing to mounted volume while running remotely
 
             with open(new_file_full_path, 'wb') as f:
                 f.write(encoded_content)
-            print("Wrote encoded_content to", new_file_full_path)
+            #print("Wrote encoded_content to", new_file_full_path)
 
     def read_file(self, file_full_path : str) -> Any:
         '''Load content from the given file - works on filesystem or on volume'''
@@ -125,21 +125,21 @@ class ModalOrLocal:
             filename_wanted = os.path.basename(prepped_path)
             volume_dir = os.path.normpath(os.path.join('/', os.path.dirname(prepped_path)))
 
-            logger.debug(f"file_or_dir_exists: searching for '%s' in '%s' '%s'", filename_wanted, self.volume_name, volume_dir)
+            #logger.debug(f"file_or_dir_exists: searching for '%s' in '%s' '%s'", filename_wanted, self.volume_name, volume_dir)
             # Look in the volume by iterating
             for f in self.volume.iterdir(volume_dir):
                 filename = os.path.basename(f.path)
-                logger.debug(f"    file_or_dir_exists: see filename = '%s'", filename)
+                #logger.debug(f"    file_or_dir_exists: see filename = '%s'", filename)
                 if filename == filename_wanted:
-                    logger.debug(f"    file_or_dir_exists: found {filename} returning True") 
+                    #logger.debug(f"    file_or_dir_exists: found {filename} returning True") 
                     return True     
         else:
             # Look in the local filesystem or mounted volume
-            logger.debug(f"file_or_dir_exists: checking for {full_path=}")
+            #logger.debug(f"file_or_dir_exists: checking for {full_path=}")
             if os.path.isfile(full_path) : return True
             if os.path.isdir(full_path) : return True
 
-        logger.debug(f"    file_or_dir_exists: returning False")
+        #logger.debug(f"    file_or_dir_exists: returning False")
         return False
     
     def path_without_volume_mount_dir(self, full_path: str) -> str:
@@ -180,25 +180,27 @@ class ModalOrLocal:
             # Remove the volume mount dir if it was passed as part of the full path
             prepped_path = self.path_without_volume_mount_dir(dir_full_path)
 
-            # Create a temp directory locally to "put" up to the volume
+            # Create a temp directory (with a temp file) locally to "directory_put" up to the volume
             temp_dir = os.path.join("/tmp", "tmp_create_directory_" + str(os.getpid()))
             
             print(f"Creating {temp_dir=}")
             os.mkdir(temp_dir)
             temp_file = os.path.join(temp_dir, "tmp.txt")
             with open(temp_file, 'w') as f:
-                f.write("This is a temp file for modal.batch_upload to create a dir - it can be safely removed\n")
+                f.write("This is a temp file for modal.batch_upload to create a directory - it can be safely removed\n")
 
             print("putting", temp_dir, prepped_path)
             with self.volume.batch_upload(force=True) as batch:
                 batch.put_directory(temp_dir, prepped_path)
 
-            print(f"Removing {temp_file=} and {temp_dir=}")
+            print(f"Removing local {temp_file=} and {temp_dir=}")
             os.remove(temp_file)
             os.rmdir(temp_dir)
 
             # Remove the temporary file (tmp.txt) from the volume
-            self.volume.remove_file(os.path.join(dir_full_path, os.path.basename(temp_file)))
+            temp_file_in_volume = os.path.join(dir_full_path, os.path.basename(temp_file))
+            print(f"Removing from volume {temp_file_in_volume=}")
+            self.remove_file_or_directory(temp_file_in_volume)
         else:
             # Creating a directory locally or on a volume while running remotely
             if not os.path.isdir(dir_full_path) : os.makedirs(dir_full_path)
