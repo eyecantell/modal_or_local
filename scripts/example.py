@@ -1,4 +1,6 @@
-import modal
+# Run this with 'modal run scripts/example.py'
+#  
+# import modal
 from modal_or_local import setup_image, ModalOrLocal
 
 image = setup_image()
