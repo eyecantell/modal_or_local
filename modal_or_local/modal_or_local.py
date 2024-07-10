@@ -1,18 +1,19 @@
 import json
 import os
 import modal
-from typing import List, Dict, Any
+from typing import Any, List, Generator, Tuple
 from io import BytesIO
 
 import logging
 import modal_or_local.logging_config
 logger = logging.getLogger("modal_or_local." + __name__)
 
-# Class can use either local directory or a modal volumne to store/retrieve files, create directories, etc.
+# Class can use either local directory or a modal volume to store/retrieve files, create directories, etc.
 class ModalOrLocal:
     '''Class to allow directory/file calls to be made to a modal volume or a local filesystem'''
 
     def __init__(self, volume_name : str = None, volume_mount_dir : str = None):
+        # If volume name is not set, all methods will pull from the local filesystem
         self.volume_name = volume_name # Name of the volume to be used. If None the local filesystem will be used
         self.volume_mount_dir = volume_mount_dir  # Directory used to mount this volume
         self.volume = None
@@ -152,12 +153,13 @@ class ModalOrLocal:
         return norm_full_path
     
     def listdir(self, dir_full_path : str = None, return_full_paths: bool = False) -> List[str]:
-        '''Return a list of files/directories in the given path on either the filesystem or a modal volume'''
+        '''Return a (non-recursive) list of files/directories in the given path on either the filesystem or a modal volume'''
         list_to_return = []
         if modal.is_local() and self.volume:
             # Remove the volume mount dir if it was passed as part of the full path
             prepped_path = self.path_without_volume_mount_dir(dir_full_path)
             for f in self.volume.iterdir(prepped_path):
+                print(f)
                 if return_full_paths:
                     list_to_return.append(str(os.path.normpath(os.path.join('/', self.volume_mount_dir, f.path))))
                 else:
@@ -171,6 +173,43 @@ class ModalOrLocal:
                 else: 
                     list_to_return.append(filename)
         return list_to_return
+    
+    import os
+
+    def walk(self, dir_full_path: str = None) -> Generator[Tuple[str, list[str], list[str]], None, None]:
+        """
+        Return a generator of (dirpath, dirs, files) tuples similar to os.walk(). Uses os.walk() if not using a volume and running locally.
+        Note dirpath will include the volume_mount_dir if applicable.
+
+        Yields:
+            Tuple[str, list[str], list[str]]: A tuple containing the current directory path,
+            a list of subdirectory names, and a list of filenames.
+        """
+        if modal.is_local() and self.volume:
+            # Remove the volume mount dir if it was passed as part of the full path
+            prepped_path = self.path_without_volume_mount_dir(dir_full_path)
+
+            # Add the entries from the given directory
+            dirpath = dir_full_path
+            dirnames = []
+            filenames = []
+
+            for entry in self.volume.iterdir(prepped_path, recursive=False):
+                print(f"walk {entry=}, {prepped_path=}")
+                if entry.type == modal.volume.FileEntryType.DIRECTORY:
+                    dirnames.append(os.path.basename(entry.path))
+                else:
+                    filenames.append(os.path.basename(entry.path))
+
+            print("yielding", (os.path.join(self.volume_mount_dir, dirpath), dirnames, filenames))
+            yield (os.path.join(self.volume_mount_dir, dirpath), dirnames, filenames)
+
+            # Walk the other directories found
+            for dir_to_walk in sorted(dirnames):
+                yield from self.walk(os.path.join(dir_full_path, dir_to_walk))
+        else:
+            # Get the list from the local filesystem
+            yield from os.walk(dir_full_path)
 
     def create_directory(self, dir_full_path : str):
         '''Create a directory (and parent dirs as needed) on the local filesystem or on a volume'''

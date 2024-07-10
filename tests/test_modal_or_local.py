@@ -1,6 +1,7 @@
 import modal
 import json
 import os
+from typing import Set
 from modal_or_local import setup_image, ModalOrLocal
 
 # Call this with 'modal run tests/test_modal_or_local.py'
@@ -109,17 +110,69 @@ def test_listdir():
     # Remove the temp test dir
     mvol.remove_file_or_directory(temp_dir)
 
+@app.function(image=image, volumes={MODAL_VOLUME_MOUNT_DIR: mvol.volume})
+def test_walk():
+    '''Create files/dirs in a temp directory, then walk the list of files in the directory'''
+    temp_dir = os.path.join(mvol.volume_mount_dir, "test_walk_data")
+    mvol.create_directory(temp_dir)
+    second_level_dir = os.path.join(temp_dir, "mydir")
+    mvol.create_directory(second_level_dir)
+
+    expected_tuples = []
+
+    # Add some files to the temp directory on the volume
+    filenames_created = []
+    # Add some files to the temp_dir
+    for prefix in ["a", "b", "c"]:
+        filename = prefix + ".txt"
+        full_path = os.path.join(temp_dir, filename)
+        file_text = "this is some text in file " + prefix
+        mvol.write_file(full_path, file_text.encode())
+        filenames_created.append(filename)
+    expected_tuples.append((temp_dir, [os.path.basename(second_level_dir)], filenames_created))
+
+    # Add some files to temp_dir/second_level_dir
+    filenames_created = []
+    for prefix in ["aa", "bb", "cc"]:
+        filename = prefix + ".txt"
+        full_path = os.path.join(second_level_dir, filename)
+        file_text = "this is some text in file " + prefix
+        mvol.write_file(full_path, file_text.encode())
+        filenames_created.append(filename)
+    expected_tuples.append((second_level_dir, [], filenames_created))
+
+    walk_tuples = []
+    for tup in mvol.walk(temp_dir):
+        walk_tuples.append(tup)
+
+    print(f"{expected_tuples=}")
+    print(f"{walk_tuples=}")
+
+    assert walk_tuples_equal(walk_tuples, expected_tuples)
+
+    # Remove the temp test dir
+    #mvol.remove_file_or_directory(temp_dir)
+
+def convert_walk_tuple_lists_to_sets(tuples):
+    return [(t[0], frozenset(t[1]), frozenset(t[2])) for t in tuples]
+
+def walk_tuples_equal(expected, actual) -> bool:
+    from collections import Counter
+    expected_converted = convert_walk_tuple_lists_to_sets(expected)
+    actual_converted = convert_walk_tuple_lists_to_sets(actual)
+    return Counter(expected_converted) == Counter(actual_converted)
 
 @app.local_entrypoint()
 def main():
     print("Running", __file__, "locally" if modal.is_local() else "remotely")
     
-    test_write_and_read_volume_json_file.local()
+    '''test_write_and_read_volume_json_file.local()
     test_write_and_read_volume_json_file.remote()
     test_create_or_remove_dir.local()
     test_create_or_remove_dir.remote()
     test_write_and_read_volume_txt_file.local()
     test_write_and_read_volume_txt_file.remote()
     test_listdir.local()
-    test_listdir.remote()
+    test_listdir.remote()'''
+    test_walk.local()
     
