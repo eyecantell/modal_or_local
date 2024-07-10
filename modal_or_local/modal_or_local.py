@@ -19,7 +19,7 @@ class ModalOrLocal:
         if volume_name:
             self.volume = modal.Volume.from_name(volume_name, create_if_missing=True)
 
-        print(f"ModalOrLocal init setting {volume_name=}, {volume_mount_dir=}")
+        #print(f"ModalOrLocal init setting {volume_name=}, {volume_mount_dir=}")
 
 
     def read_json_file(self, json_file_full_path : str) -> Any:
@@ -28,7 +28,7 @@ class ModalOrLocal:
             # Read using the modal volume tools - volume.read_file() apparently expects a "relative" path from / and does not use the volume mount dir in path
             prepped_path = self.path_without_volume_mount_dir(json_file_full_path)
             if prepped_path.startswith('/'): prepped_path=prepped_path.replace("/","",1)
-            print(f"Reading {prepped_path=} with read_file() from {self.volume_name=}", "locally" if modal.is_local() else "remotely")
+            #print(f"Reading {prepped_path=} with read_file() from {self.volume_name=}", "locally" if modal.is_local() else "remotely")
             file_contents = b''
             for chunk in self.volume.read_file(path=prepped_path):
                 file_contents += chunk
@@ -36,7 +36,7 @@ class ModalOrLocal:
             metadata = json.loads(file_contents)
         else: 
             # Reading from local filesystem, or reading (from mounted volume) while running remotely
-            print(f"Reading {json_file_full_path=} with open()", "locally" if modal.is_local() else "remotely")
+            #print(f"Reading {json_file_full_path=} with open()", "locally" if modal.is_local() else "remotely")
             with open(json_file_full_path, 'r') as f:
                 metadata = json.load(f)
         return metadata
@@ -48,7 +48,7 @@ class ModalOrLocal:
             # Reading locally from volume
             prepped_path = self.path_without_volume_mount_dir(new_json_file_full_path)
             prepped_path = os.path.normpath(os.path.join('/', prepped_path))
-            logger.debug("write_json_file: prepped path is '%s'", prepped_path)
+            #logger.debug("write_json_file: prepped path is '%s'", prepped_path)
 
             json_encoded = json.dumps(metadata, indent=4).encode()
             
@@ -69,7 +69,7 @@ class ModalOrLocal:
             # Reading locally from volume
             prepped_path = self.path_without_volume_mount_dir(new_file_full_path)
             prepped_path = os.path.normpath(os.path.join('/', prepped_path))
-            logger.debug("write_file: prepped path is '%s'", prepped_path)
+            #logger.debug("write_file: prepped path is '%s'", prepped_path)
             
             with self.volume.batch_upload(force=force) as batch:
                 batch.put_file(BytesIO(encoded_content), prepped_path)
@@ -87,14 +87,14 @@ class ModalOrLocal:
             # Read using the modal volume tools - volume.read_file() apparently expects a "relative" path from / and does not use the volume mount dir in path
             prepped_path = self.path_without_volume_mount_dir(file_full_path)
             if prepped_path.startswith('/'): prepped_path=prepped_path.replace("/","",1)
-            print(f"Reading {prepped_path=} with read_file() from {self.volume_name=}", "locally" if modal.is_local() else "remotely")
+            #print(f"Reading {prepped_path=} with read_file() from {self.volume_name=}", "locally" if modal.is_local() else "remotely")
             file_contents = b''
             for chunk in self.volume.read_file(path=prepped_path):
                 file_contents += chunk
 
         else: 
             # Reading from local filesystem, or reading (from mounted volume) while running remotely
-            print(f"Reading {file_full_path=} with open()", "locally" if modal.is_local() else "remotely")
+            #print(f"Reading {file_full_path=} with open()", "locally" if modal.is_local() else "remotely")
             with open(file_full_path, 'rb') as f:
                 file_contents = f.read()
         return file_contents
@@ -107,11 +107,11 @@ class ModalOrLocal:
             # Make sure there is a leading slash in the case of a bare filename passed
             
             prepped_path = self.path_without_volume_mount_dir(file_or_dir_to_remove_full_path)
-            print(f"Removing",prepped_path,"from volume", self.volume_name)
+            #print(f"Removing",prepped_path,"from volume", self.volume_name)
             self.volume.remove_file(prepped_path, recursive=True)
         else:
             # Remove directly from the filesystem or mounted volume
-            print(f"Removing from filesystem:",file_or_dir_to_remove_full_path)
+            #print(f"Removing from filesystem:",file_or_dir_to_remove_full_path)
             if os.path.isfile(file_or_dir_to_remove_full_path): os.remove(file_or_dir_to_remove_full_path)
             if os.path.isdir(file_or_dir_to_remove_full_path):
                 from shutil import rmtree
@@ -183,23 +183,23 @@ class ModalOrLocal:
             # Create a temp directory (with a temp file) locally to "directory_put" up to the volume
             temp_dir = os.path.join("/tmp", "tmp_create_directory_" + str(os.getpid()))
             
-            print(f"Creating {temp_dir=}")
+            #print(f"Creating {temp_dir=}")
             os.mkdir(temp_dir)
             temp_file = os.path.join(temp_dir, "tmp.txt")
             with open(temp_file, 'w') as f:
                 f.write("This is a temp file for modal.batch_upload to create a directory - it can be safely removed\n")
 
-            print("putting", temp_dir, prepped_path)
+            #print("putting", temp_dir, prepped_path)
             with self.volume.batch_upload(force=True) as batch:
                 batch.put_directory(temp_dir, prepped_path)
 
-            print(f"Removing local {temp_file=} and {temp_dir=}")
+            #print(f"Removing local {temp_file=} and {temp_dir=}")
             os.remove(temp_file)
             os.rmdir(temp_dir)
 
             # Remove the temporary file (tmp.txt) from the volume
             temp_file_in_volume = os.path.join(dir_full_path, os.path.basename(temp_file))
-            print(f"Removing from volume {temp_file_in_volume=}")
+            #print(f"Removing from volume {temp_file_in_volume=}")
             self.remove_file_or_directory(temp_file_in_volume)
         else:
             # Creating a directory locally or on a volume while running remotely

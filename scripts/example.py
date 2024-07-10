@@ -1,10 +1,3 @@
-# modal_or_local
-File and directory utilities for working with modal volumes. The modal_or_local package gives the ability to use the same code to control files and directories from either a local run or remote run.
-
-See scripts/example.py and tests/test_modal_or_local.py for code samples.
-
-## Usage
-```python
 import modal
 import os
 from modal_or_local import setup_image, ModalOrLocal
