@@ -71,14 +71,13 @@ def test_write_and_read_volume_txt_file():
 def test_create_or_remove_dir():
     '''Create and remove directory within a volume'''
     for dir_to_create in ["test_create_or_remove_dir_data", "/test_create_or_remove_dir_data/test/a/b/c"]:
+        if dir_to_create.startswith("/"): dir_to_create = dir_to_create.replace("/","")
         dir_to_create_full_path = os.path.join(mvol.volume_mount_dir, dir_to_create)
+        print(f"Creating '{dir_to_create_full_path=}'")
         mvol.create_directory(dir_to_create_full_path)
         assert mvol.file_or_dir_exists(dir_to_create_full_path)
         mvol.remove_file_or_directory(dir_to_create_full_path)
         assert not mvol.file_or_dir_exists(dir_to_create_full_path)
-
-    # Remove the "test_create_or_remove_dir_data" test dir
-    mvol.remove_file_or_directory(os.path.join(MODAL_VOLUME_MOUNT_DIR, "test_create_or_remove_dir_data"))
 
 @app.function(image=image, volumes={MODAL_VOLUME_MOUNT_DIR: mvol.volume})
 def test_listdir():
@@ -201,6 +200,6 @@ def main():
     test_walk.local()
     #test_walk.remote()
     test_get_FileEntry.local()
-    #test_get_FileEntry.remote()
+    test_get_FileEntry.remote()
 
     

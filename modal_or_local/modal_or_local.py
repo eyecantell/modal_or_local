@@ -108,13 +108,17 @@ class ModalOrLocal:
 
     def remove_file_or_directory(self, file_or_dir_to_remove_full_path: str):
         '''Remove the given full path from the filesystem or modal volume'''
+
+        if not self.file_or_dir_exists(file_or_dir_to_remove_full_path):
+            raise RuntimeError(f"Cannot remove file that does not exist: '{file_or_dir_to_remove_full_path}'")
+        
         # Remove the given file or directory
         if modal.is_local() and self.volume:
             # Remove the file/dir from the volume
             # Make sure there is a leading slash in the case of a bare filename passed
             
             prepped_path = self.path_without_volume_mount_dir(file_or_dir_to_remove_full_path, volume_mount_dir_required=True)
-            #print(f"Removing",prepped_path,"from volume", self.volume_name)
+            print(f"Removing {prepped_path} ({file_or_dir_to_remove_full_path}) from volume", self.volume_name)
             self.volume.remove_file(prepped_path, recursive=True)
         else:
             # Remove directly from the filesystem or mounted volume
@@ -128,6 +132,7 @@ class ModalOrLocal:
     def file_or_dir_exists(self, full_path) -> bool:
         '''Returns true if the passed file or directory exists in the volume/local filesystem'''
         fe = self.get_FileEntry(full_path)
+        print("file_or_dir_exists:", f"{fe=}")
         if fe: return True
         return False
     
@@ -226,7 +231,7 @@ class ModalOrLocal:
             # Create a temp directory (with a temp file) locally to "directory_put" up to the volume
             temp_dir = os.path.join("/tmp", "tmp_create_directory_" + str(os.getpid()))
             
-            #print(f"Creating {temp_dir=}")
+            #print(f"create_directory: Creating {temp_dir=}")
             os.mkdir(temp_dir)
             temp_file = os.path.join(temp_dir, "tmp.txt")
             with open(temp_file, 'w') as f:
@@ -234,6 +239,7 @@ class ModalOrLocal:
 
             #print("putting", temp_dir, prepped_path)
             with self.volume.batch_upload(force=True) as batch:
+                #print(f"create_directory: Putting {temp_dir=}, {prepped_path=}")
                 batch.put_directory(temp_dir, prepped_path)
 
             #print(f"Removing local {temp_file=} and {temp_dir=}")
