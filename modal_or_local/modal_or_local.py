@@ -132,7 +132,7 @@ class ModalOrLocal:
     def file_or_dir_exists(self, full_path) -> bool:
         '''Returns true if the passed file or directory exists in the volume/local filesystem'''
         fe = self.get_FileEntry(full_path)
-        print("file_or_dir_exists:", f"{fe=}")
+        #print("file_or_dir_exists:", f"{fe=}")
         if fe: return True
         return False
     
@@ -331,8 +331,17 @@ class ModalOrLocal:
             if path_to_return.startswith("/"): path_to_return=path_to_return.replace("/","",1)
             return FileEntry(path=path_to_return, type=entry_type, mtime=path.stat().st_mtime, size=path.stat().st_size)
 
-
-
+    def isdir(self, full_path) -> bool:
+        fe = self.get_FileEntry(full_path)
+        #print("file_or_dir_exists:", f"{fe=}")
+        if fe.type == FileEntryType.DIRECTORY: return True
+        return False
+    
+    def isfile(self, full_path) -> bool:
+        fe = self.get_FileEntry(full_path)
+        #print("file_or_dir_exists:", f"{fe=}")
+        if fe.type == FileEntryType.FILE: return True
+        return False
 
 
 
