@@ -71,10 +71,11 @@ def test_write_and_read_volume_txt_file():
 def test_create_or_remove_dir():
     '''Create and remove directory within a volume'''
     for dir_to_create in ["test_create_or_remove_dir_data", "/test_create_or_remove_dir_data/test/a/b/c"]:
-        mvol.create_directory(dir_to_create)
-        assert mvol.file_or_dir_exists(dir_to_create)
-        mvol.remove_file_or_directory(dir_to_create)
-        assert not mvol.file_or_dir_exists(dir_to_create)
+        dir_to_create_full_path = os.path.join(mvol.volume_mount_dir, dir_to_create)
+        mvol.create_directory(dir_to_create_full_path)
+        assert mvol.file_or_dir_exists(dir_to_create_full_path)
+        mvol.remove_file_or_directory(dir_to_create_full_path)
+        assert not mvol.file_or_dir_exists(dir_to_create_full_path)
 
     # Remove the "test_create_or_remove_dir_data" test dir
     mvol.remove_file_or_directory(os.path.join(MODAL_VOLUME_MOUNT_DIR, "test_create_or_remove_dir_data"))
@@ -189,17 +190,17 @@ def test_get_FileEntry():
 def main():
     print("Running", __file__, "locally" if modal.is_local() else "remotely")
     
-    '''test_write_and_read_volume_json_file.local()
-    test_write_and_read_volume_json_file.remote()
+    test_write_and_read_volume_json_file.local()
+    #test_write_and_read_volume_json_file.remote()
     test_create_or_remove_dir.local()
-    test_create_or_remove_dir.remote()
+    #test_create_or_remove_dir.remote()
     test_write_and_read_volume_txt_file.local()
-    test_write_and_read_volume_txt_file.remote()
+    #test_write_and_read_volume_txt_file.remote()
     test_listdir.local()
-    test_listdir.remote()
+    #test_listdir.remote()
     test_walk.local()
-    test_walk.remote()'''
+    #test_walk.remote()
     test_get_FileEntry.local()
-    test_get_FileEntry.remote()
+    #test_get_FileEntry.remote()
 
     

@@ -127,26 +127,8 @@ class ModalOrLocal:
 
     def file_or_dir_exists(self, full_path) -> bool:
         '''Returns true if the passed file or directory exists in the volume/local filesystem'''
-        if modal.is_local() and self.volume:
-            prepped_path = self.path_without_volume_mount_dir(full_path, volume_mount_dir_required=True)
-            filename_wanted = os.path.basename(prepped_path)
-            volume_dir = os.path.normpath(os.path.join('/', os.path.dirname(prepped_path)))
-
-            #logger.debug(f"file_or_dir_exists: searching for '%s' in '%s' '%s'", filename_wanted, self.volume_name, volume_dir)
-            # Look in the volume by iterating
-            for f in self.volume.iterdir(volume_dir):
-                filename = os.path.basename(f.path)
-                #logger.debug(f"    file_or_dir_exists: see filename = '%s'", filename)
-                if filename == filename_wanted:
-                    #logger.debug(f"    file_or_dir_exists: found {filename} returning True") 
-                    return True     
-        else:
-            # Look in the local filesystem or mounted volume
-            #logger.debug(f"file_or_dir_exists: checking for {full_path=}")
-            if os.path.isfile(full_path) : return True
-            if os.path.isdir(full_path) : return True
-
-        #logger.debug(f"    file_or_dir_exists: returning False")
+        fe = self.get_FileEntry(full_path)
+        if fe: return True
         return False
     
     def path_without_volume_mount_dir(self, full_path: str, volume_mount_dir_required: bool = True) -> str:
