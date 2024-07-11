@@ -339,7 +339,7 @@ class ModalOrLocal:
             path = Path(full_path)
             entry_type = FileEntryType.FILE if path.is_file() else FileEntryType.DIRECTORY if path.is_dir() else None
             path_to_return = str(path)
-            if path_to_return.startswith("/"): path_to_return.replace("/","",1)
+            if path_to_return.startswith("/"): path_to_return=path_to_return.replace("/","",1)
             return FileEntry(path=path_to_return, type=entry_type, mtime=path.stat().st_mtime, size=path.stat().st_size)
 
 

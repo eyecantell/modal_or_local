@@ -163,14 +163,14 @@ def walk_tuples_equal(expected, actual) -> bool:
     return Counter(expected_converted) == Counter(actual_converted)
 
 @app.function(image=image, volumes={MODAL_VOLUME_MOUNT_DIR: mvol.volume})
-def test_get_fileEntry():
+def test_get_FileEntry():
     '''Create a file and dir on the volume, check we can get FileEntry of each'''
-    temp_dir = os.path.join(mvol.volume_mount_dir, "test_get_fileEntry", "second_level_dir")
+    temp_dir = os.path.join(mvol.volume_mount_dir, "test_get_FileEntry", "second_level_dir")
     mvol.create_directory(temp_dir)
     json_file_full_path = os.path.join(temp_dir, "mytest.json")
     mvol.write_json_file(json_file_full_path, {"x":1, "y":2})
 
-    for path in [mvol.volume_mount_dir, f"{mvol.volume_mount_dir}/test_get_fileEntry", f"{mvol.volume_mount_dir}/test_get_fileEntry", temp_dir, json_file_full_path]:
+    for path in [mvol.volume_mount_dir, f"{mvol.volume_mount_dir}/test_get_FileEntry", f"{mvol.volume_mount_dir}/test_get_FileEntry", temp_dir, json_file_full_path]:
         entry = mvol.get_FileEntry(path)
         print(f"mvol.get_FileEntry({path})=", mvol.get_FileEntry(path), "\n\n")
         
@@ -199,6 +199,7 @@ def main():
     test_listdir.remote()
     test_walk.local()
     test_walk.remote()'''
-    test_get_fileEntry.local()
+    test_get_FileEntry.local()
+    test_get_FileEntry.remote()
 
     
