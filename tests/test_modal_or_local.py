@@ -164,13 +164,13 @@ def walk_tuples_equal(expected, actual) -> bool:
 
 @app.function(image=image, volumes={MODAL_VOLUME_MOUNT_DIR: mvol.volume})
 def test_get_fileEntry():
-    '''Create a file and dir on the volume, get mtime of each'''
+    '''Create a file and dir on the volume, check we can get FileEntry of each'''
     temp_dir = os.path.join(mvol.volume_mount_dir, "test_get_fileEntry", "second_level_dir")
     mvol.create_directory(temp_dir)
     json_file_full_path = os.path.join(temp_dir, "mytest.json")
     mvol.write_json_file(json_file_full_path, {"x":1, "y":2})
 
-    for path in ["/", "/test_get_fileEntry", "test_get_fileEntry", temp_dir, json_file_full_path]:
+    for path in [mvol.volume_mount_dir, f"{mvol.volume_mount_dir}/test_get_fileEntry", f"{mvol.volume_mount_dir}/test_get_fileEntry", temp_dir, json_file_full_path]:
         entry = mvol.get_FileEntry(path)
         print(f"mvol.get_FileEntry({path})=", mvol.get_FileEntry(path), "\n\n")
         
@@ -178,12 +178,12 @@ def test_get_fileEntry():
         if path != "/" and path.startswith('/'): path=path.replace("/","",1)
         assert entry.path == path, f"Expected '{path}' but got '{entry.path}' from {entry}"
 
-    for path in ["", "/a", "mytest.json", "/second_level_dir"]:
-        assert not mvol.get_FileEntry(path), f"Expected None but got {entry}"
-    
+    for path in ["a", "mytest.json", "second_level_dir"]:
+        path_to_check = os.path.join(mvol.volume_mount_dir, path)
+        assert not mvol.get_FileEntry(full_path=path_to_check), f"Expected None but got {entry}"
 
     # Remove the temp test dir
-    #mvol.remove_file_or_directory(temp_dir)
+    mvol.remove_file_or_directory(temp_dir)
 
 @app.local_entrypoint()
 def main():

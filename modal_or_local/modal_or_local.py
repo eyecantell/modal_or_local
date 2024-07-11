@@ -3,7 +3,9 @@ import os
 import modal
 from pathlib import Path
 from typing import Any, List, Generator, Tuple
+from modal.volume import FileEntry, FileEntryType
 from io import BytesIO
+from grpclib import Status, GRPCError
 
 import logging
 import modal_or_local.logging_config
@@ -150,15 +152,19 @@ class ModalOrLocal:
     def path_without_volume_mount_dir(self, full_path: str, volume_mount_dir_required: bool = True) -> str:
         '''Return given path without the volume mount dir prepended. Typically needed for the modal.volume utils.'''
 
+        if not full_path:
+            raise RuntimeError(f"path_without_volume_mount_dir got blank {full_path=}")
+        
         # If the volume mount dir was not the start of the path, path is not legit
         if volume_mount_dir_required and not self.path_starts_with_volume_mount_dir(full_path): 
             raise RuntimeError(f"Expected path to have volume mount dir prepended: {full_path=}, {self.volume_mount_dir=}")
         
         # If the give path starts with the volume mount dir, remove the volume mount dir
         norm_full_path = str(os.path.normpath(os.path.join('/', full_path)))
-        print(f"path_without_volume_mount_dir: {full_path=}, {norm_full_path=}")
+        #print(f"path_without_volume_mount_dir: {full_path=}, {norm_full_path=}")
         if norm_full_path.startswith(self.volume_mount_dir):
             path_without_volume_mount_dir = norm_full_path.removeprefix(self.volume_mount_dir)
+            if path_without_volume_mount_dir == "": return "/"
             return path_without_volume_mount_dir
         return norm_full_path
     
@@ -212,7 +218,7 @@ class ModalOrLocal:
 
             for entry in self.volume.iterdir(prepped_path, recursive=False):
                 print(f"walk {entry=}, {prepped_path=}")
-                if entry.type == modal.volume.FileEntryType.DIRECTORY:
+                if entry.type == FileEntryType.DIRECTORY:
                     dirnames.append(os.path.basename(entry.path))
                 else:
                     filenames.append(os.path.basename(entry.path))
@@ -275,52 +281,66 @@ class ModalOrLocal:
             # Get the file info from the local filesystem
             os.path.getmtime(full_path)
 
-    def get_FileEntry(self, full_path) -> modal.volume.FileEntry:
+    def get_FileEntry(self, full_path) -> FileEntry:
         '''Return a modal.volume.FileEntry for the given path if it exists.'''
 
-        if not full_path: return None
+        if not full_path:
+            raise RuntimeError(f"get_FileEntry was passed a blank full_path {full_path=}")
 
         if modal.is_local() and self.volume:
             # Get the file info from the volume
 
             prepped_path = self.path_without_volume_mount_dir(full_path, volume_mount_dir_required=True)
-
+            # volume.iterdir expects paths to be relative from "/", so remove any leading slash
             if prepped_path != "/" and prepped_path.startswith('/'): prepped_path=prepped_path.replace("/","",1)
             print(f"{prepped_path=}")
 
             # Modal does not make getting a FileEntry for '/' available, so return a placeholder
-            if prepped_path == "/": return modal.volume.FileEntry(path='/',type=modal.volume.FileEntryType.DIRECTORY, mtime=0, size=0)
+            if prepped_path == "/": 
+                return FileEntry(path=self.volume_mount_dir.replace("/","",1),type=FileEntryType.DIRECTORY, mtime=0, size=0)
 
-            # If the full path is a file, iterdir will return a single FileEntry
-            # Its also possible that there is a single file in the full_path directory
-            entries = self.volume.listdir(prepped_path)
-            print("get_FileEntry: Checking for file got ", f"{entries=}")
+            # If the full path is a file, volume.listdir() will return a single FileEntry
+            # Its also possible that there is a single file in the full_path directory, so we double check the path
+            
+            try:
+                entries = self.volume.listdir(prepped_path)
+            except GRPCError as e:
+                if e.status == Status.NOT_FOUND:
+                    # The path does not exist on the volume
+                    return None
+                else:
+                    raise
+            
+            #print(f"get_FileEntry: Checking for file '{prepped_path}' got ", f"{entries=}")
+            volume_mount_dir_no_lead_slash = self.volume_mount_dir.replace("/","",1)
             if len(entries) == 1 and entries[0].path == prepped_path: 
                 entry = entries[0]
-                # Add the volume mount directory back onto the start of path
-                entry.path = os.path.join(self.volume_mount_dir, entry.path)
-                return entry
+                # Add the volume mount directory back onto the start of path and return (note the entry itself is immutable)
+                return FileEntry(path=os.path.join(volume_mount_dir_no_lead_slash, entry.path), type=entry.type, mtime=entry.mtime, size=entry.size)
 
             # Presuming full_path is a directory, list its parent to get the FileEntry
             parent_dir = str(Path(prepped_path).parent)
+            if parent_dir == ".": parent_dir = "/"
             if parent_dir != "/" and parent_dir.startswith('/'): parent_dir=parent_dir.replace("/","",1)
-            print(f"{parent_dir=}")
+            #print(f"{parent_dir=}")
             
-            print("get_FileEntry: Checking for dir got ", self.volume.listdir(parent_dir))
+            #print("get_FileEntry: Checking for dir got ", self.volume.listdir(parent_dir))
             for entry in self.volume.listdir(parent_dir):
                 if entry.path == prepped_path: 
-                    # Add the volume mount directory back onto the start of path
-                    entry.path = os.path.join(self.volume_mount_dir, entry.path)
-                    return entry
+                    # Add the volume mount directory back onto the start of path and return (note the entry itself is immutable)
+                    return FileEntry(path=os.path.join(volume_mount_dir_no_lead_slash, entry.path), type=entry.type, mtime=entry.mtime, size=entry.size)
 
             # Did not find a file or directory for the given path
             return None
 
         else:
             # Get the file info from the local filesystem
-            os.path.getmtime(full_path)
-            modal.volume.FileEntry(full_path, )
-        pass
+            print(f"Getting FileEntry for {full_path=} from filesystem")
+            path = Path(full_path)
+            entry_type = FileEntryType.FILE if path.is_file() else FileEntryType.DIRECTORY if path.is_dir() else None
+            path_to_return = str(path)
+            if path_to_return.startswith("/"): path_to_return.replace("/","",1)
+            return FileEntry(path=path_to_return, type=entry_type, mtime=path.stat().st_mtime, size=path.stat().st_size)
 
 
 
