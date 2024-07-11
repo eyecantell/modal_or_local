@@ -28,7 +28,7 @@ def setup_image()->Image:
         .pip_install(*requirements)
         .workdir("/root")
         .env({"MY_ENV_VAR": "value"})
-        .run_commands("pwd && git clone https://github.com/eyecantell/modal_or_local.git", force_build=False)
+        .run_commands("pwd && git clone https://github.com/eyecantell/modal_or_local.git", force_build=True)
     )
 
     return image

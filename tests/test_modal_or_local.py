@@ -151,7 +151,7 @@ def test_walk():
     assert walk_tuples_equal(walk_tuples, expected_tuples)
 
     # Remove the temp test dir
-    #mvol.remove_file_or_directory(temp_dir)
+    mvol.remove_file_or_directory(temp_dir)
 
 def convert_walk_tuple_lists_to_sets(tuples):
     return [(t[0], frozenset(t[1]), frozenset(t[2])) for t in tuples]
@@ -161,6 +161,29 @@ def walk_tuples_equal(expected, actual) -> bool:
     expected_converted = convert_walk_tuple_lists_to_sets(expected)
     actual_converted = convert_walk_tuple_lists_to_sets(actual)
     return Counter(expected_converted) == Counter(actual_converted)
+
+@app.function(image=image, volumes={MODAL_VOLUME_MOUNT_DIR: mvol.volume})
+def test_get_fileEntry():
+    '''Create a file and dir on the volume, get mtime of each'''
+    temp_dir = os.path.join(mvol.volume_mount_dir, "test_get_fileEntry", "second_level_dir")
+    mvol.create_directory(temp_dir)
+    json_file_full_path = os.path.join(temp_dir, "mytest.json")
+    mvol.write_json_file(json_file_full_path, {"x":1, "y":2})
+
+    for path in ["/", "/test_get_fileEntry", "test_get_fileEntry", temp_dir, json_file_full_path]:
+        entry = mvol.get_FileEntry(path)
+        print(f"mvol.get_FileEntry({path})=", mvol.get_FileEntry(path), "\n\n")
+        
+        # entry.path will not have a leading slash, so remove from path before testing equality
+        if path != "/" and path.startswith('/'): path=path.replace("/","",1)
+        assert entry.path == path, f"Expected '{path}' but got '{entry.path}' from {entry}"
+
+    for path in ["", "/a", "mytest.json", "/second_level_dir"]:
+        assert not mvol.get_FileEntry(path), f"Expected None but got {entry}"
+    
+
+    # Remove the temp test dir
+    #mvol.remove_file_or_directory(temp_dir)
 
 @app.local_entrypoint()
 def main():
@@ -173,6 +196,9 @@ def main():
     test_write_and_read_volume_txt_file.local()
     test_write_and_read_volume_txt_file.remote()
     test_listdir.local()
-    test_listdir.remote()'''
+    test_listdir.remote()
     test_walk.local()
+    test_walk.remote()'''
+    test_get_fileEntry.local()
+
     

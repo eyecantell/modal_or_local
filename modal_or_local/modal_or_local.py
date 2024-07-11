@@ -1,6 +1,7 @@
 import json
 import os
 import modal
+from pathlib import Path
 from typing import Any, List, Generator, Tuple
 from io import BytesIO
 
@@ -27,7 +28,8 @@ class ModalOrLocal:
         '''Load json from the given file - works on filesystem or on volume'''
         if modal.is_local() and self.volume:
             # Read using the modal volume tools - volume.read_file() apparently expects a "relative" path from / and does not use the volume mount dir in path
-            prepped_path = self.path_without_volume_mount_dir(json_file_full_path)
+
+            prepped_path = self.path_without_volume_mount_dir(json_file_full_path, volume_mount_dir_required=True)
             if prepped_path.startswith('/'): prepped_path=prepped_path.replace("/","",1)
             #print(f"Reading {prepped_path=} with read_file() from {self.volume_name=}", "locally" if modal.is_local() else "remotely")
             file_contents = b''
@@ -43,11 +45,12 @@ class ModalOrLocal:
         return metadata
         
     def write_json_file(self, new_json_file_full_path: str, metadata : Any, force: bool = True):
-        '''Write a json file to either the local filesystem or to a volume'''
+        '''Write a json file to either the local filesystem or to a volume. This will create any needed parent directories automatically.'''
 
         if modal.is_local() and self.volume:
             # Reading locally from volume
-            prepped_path = self.path_without_volume_mount_dir(new_json_file_full_path)
+            
+            prepped_path = self.path_without_volume_mount_dir(new_json_file_full_path, volume_mount_dir_required=True)
             prepped_path = os.path.normpath(os.path.join('/', prepped_path))
             #logger.debug("write_json_file: prepped path is '%s'", prepped_path)
 
@@ -64,11 +67,12 @@ class ModalOrLocal:
             #print("Wrote metadata to", new_json_file_full_path)
 
     def write_file(self, new_file_full_path: str, encoded_content : Any, force: bool = True):
-        '''Write the encoded content to a file in either the local filesystem or to a volume'''
+        '''Write the encoded content to a file in either the local filesystem or to a volume. This will create any needed parent directories automatically.'''
 
         if modal.is_local() and self.volume:
             # Reading locally from volume
-            prepped_path = self.path_without_volume_mount_dir(new_file_full_path)
+            
+            prepped_path = self.path_without_volume_mount_dir(new_file_full_path, volume_mount_dir_required=True)
             prepped_path = os.path.normpath(os.path.join('/', prepped_path))
             #logger.debug("write_file: prepped path is '%s'", prepped_path)
             
@@ -86,7 +90,7 @@ class ModalOrLocal:
         '''Load content from the given file - works on filesystem or on volume'''
         if modal.is_local() and self.volume:
             # Read using the modal volume tools - volume.read_file() apparently expects a "relative" path from / and does not use the volume mount dir in path
-            prepped_path = self.path_without_volume_mount_dir(file_full_path)
+            prepped_path = self.path_without_volume_mount_dir(file_full_path, volume_mount_dir_required=True)
             if prepped_path.startswith('/'): prepped_path=prepped_path.replace("/","",1)
             #print(f"Reading {prepped_path=} with read_file() from {self.volume_name=}", "locally" if modal.is_local() else "remotely")
             file_contents = b''
@@ -107,7 +111,7 @@ class ModalOrLocal:
             # Remove the file/dir from the volume
             # Make sure there is a leading slash in the case of a bare filename passed
             
-            prepped_path = self.path_without_volume_mount_dir(file_or_dir_to_remove_full_path)
+            prepped_path = self.path_without_volume_mount_dir(file_or_dir_to_remove_full_path, volume_mount_dir_required=True)
             #print(f"Removing",prepped_path,"from volume", self.volume_name)
             self.volume.remove_file(prepped_path, recursive=True)
         else:
@@ -122,7 +126,7 @@ class ModalOrLocal:
     def file_or_dir_exists(self, full_path) -> bool:
         '''Returns true if the passed file or directory exists in the volume/local filesystem'''
         if modal.is_local() and self.volume:
-            prepped_path = self.path_without_volume_mount_dir(full_path)
+            prepped_path = self.path_without_volume_mount_dir(full_path, volume_mount_dir_required=True)
             filename_wanted = os.path.basename(prepped_path)
             volume_dir = os.path.normpath(os.path.join('/', os.path.dirname(prepped_path)))
 
@@ -143,23 +147,35 @@ class ModalOrLocal:
         #logger.debug(f"    file_or_dir_exists: returning False")
         return False
     
-    def path_without_volume_mount_dir(self, full_path: str) -> str:
-        '''Return given path without the volume mount dir prepended'''
+    def path_without_volume_mount_dir(self, full_path: str, volume_mount_dir_required: bool = True) -> str:
+        '''Return given path without the volume mount dir prepended. Typically needed for the modal.volume utils.'''
+
+        # If the volume mount dir was not the start of the path, path is not legit
+        if volume_mount_dir_required and not self.path_starts_with_volume_mount_dir(full_path): 
+            raise RuntimeError(f"Expected path to have volume mount dir prepended: {full_path=}, {self.volume_mount_dir=}")
+        
         # If the give path starts with the volume mount dir, remove the volume mount dir
         norm_full_path = str(os.path.normpath(os.path.join('/', full_path)))
+        print(f"path_without_volume_mount_dir: {full_path=}, {norm_full_path=}")
         if norm_full_path.startswith(self.volume_mount_dir):
             path_without_volume_mount_dir = norm_full_path.removeprefix(self.volume_mount_dir)
             return path_without_volume_mount_dir
         return norm_full_path
+    
+    def path_starts_with_volume_mount_dir(self, full_path: str) -> bool:
+        '''Return true if given path has the volume mount dir prepended'''
+
+        norm_full_path = str(os.path.normpath(os.path.join('/', full_path)))
+        if norm_full_path.startswith(self.volume_mount_dir): return True
+        return False
     
     def listdir(self, dir_full_path : str = None, return_full_paths: bool = False) -> List[str]:
         '''Return a (non-recursive) list of files/directories in the given path on either the filesystem or a modal volume'''
         list_to_return = []
         if modal.is_local() and self.volume:
             # Remove the volume mount dir if it was passed as part of the full path
-            prepped_path = self.path_without_volume_mount_dir(dir_full_path)
+            prepped_path = self.path_without_volume_mount_dir(dir_full_path, volume_mount_dir_required=True)
             for f in self.volume.iterdir(prepped_path):
-                print(f)
                 if return_full_paths:
                     list_to_return.append(str(os.path.normpath(os.path.join('/', self.volume_mount_dir, f.path))))
                 else:
@@ -187,7 +203,7 @@ class ModalOrLocal:
         """
         if modal.is_local() and self.volume:
             # Remove the volume mount dir if it was passed as part of the full path
-            prepped_path = self.path_without_volume_mount_dir(dir_full_path)
+            prepped_path = self.path_without_volume_mount_dir(dir_full_path, volume_mount_dir_required=True)
 
             # Add the entries from the given directory
             dirpath = dir_full_path
@@ -217,7 +233,7 @@ class ModalOrLocal:
         if modal.is_local() and self.volume:
             # Create the notice dir on the volume
             # Remove the volume mount dir if it was passed as part of the full path
-            prepped_path = self.path_without_volume_mount_dir(dir_full_path)
+            prepped_path = self.path_without_volume_mount_dir(dir_full_path, volume_mount_dir_required=True)
 
             # Create a temp directory (with a temp file) locally to "directory_put" up to the volume
             temp_dir = os.path.join("/tmp", "tmp_create_directory_" + str(os.getpid()))
@@ -244,7 +260,67 @@ class ModalOrLocal:
             # Creating a directory locally or on a volume while running remotely
             if not os.path.isdir(dir_full_path) : os.makedirs(dir_full_path)
 
+    
+    def get_mtime(self, full_path) -> int:
+        '''Returns most recent modified time (in seconds) of the given file/dir'''
+        if modal.is_local() and self.volume:
+            # Get the file info from the volume
+            prepped_path = self.path_without_volume_mount_dir(full_path, volume_mount_dir_required=True)
+            entries = []
+            for f in self.volume.iterdir(prepped_path):
+                print(f)
+                entries.append(f)
+            print(f"{entries=}")
+        else:
+            # Get the file info from the local filesystem
+            os.path.getmtime(full_path)
 
+    def get_FileEntry(self, full_path) -> modal.volume.FileEntry:
+        '''Return a modal.volume.FileEntry for the given path if it exists.'''
+
+        if not full_path: return None
+
+        if modal.is_local() and self.volume:
+            # Get the file info from the volume
+
+            prepped_path = self.path_without_volume_mount_dir(full_path, volume_mount_dir_required=True)
+
+            if prepped_path != "/" and prepped_path.startswith('/'): prepped_path=prepped_path.replace("/","",1)
+            print(f"{prepped_path=}")
+
+            # Modal does not make getting a FileEntry for '/' available, so return a placeholder
+            if prepped_path == "/": return modal.volume.FileEntry(path='/',type=modal.volume.FileEntryType.DIRECTORY, mtime=0, size=0)
+
+            # If the full path is a file, iterdir will return a single FileEntry
+            # Its also possible that there is a single file in the full_path directory
+            entries = self.volume.listdir(prepped_path)
+            print("get_FileEntry: Checking for file got ", f"{entries=}")
+            if len(entries) == 1 and entries[0].path == prepped_path: 
+                entry = entries[0]
+                # Add the volume mount directory back onto the start of path
+                entry.path = os.path.join(self.volume_mount_dir, entry.path)
+                return entry
+
+            # Presuming full_path is a directory, list its parent to get the FileEntry
+            parent_dir = str(Path(prepped_path).parent)
+            if parent_dir != "/" and parent_dir.startswith('/'): parent_dir=parent_dir.replace("/","",1)
+            print(f"{parent_dir=}")
+            
+            print("get_FileEntry: Checking for dir got ", self.volume.listdir(parent_dir))
+            for entry in self.volume.listdir(parent_dir):
+                if entry.path == prepped_path: 
+                    # Add the volume mount directory back onto the start of path
+                    entry.path = os.path.join(self.volume_mount_dir, entry.path)
+                    return entry
+
+            # Did not find a file or directory for the given path
+            return None
+
+        else:
+            # Get the file info from the local filesystem
+            os.path.getmtime(full_path)
+            modal.volume.FileEntry(full_path, )
+        pass
 
 
 
