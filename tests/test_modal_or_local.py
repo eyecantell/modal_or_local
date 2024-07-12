@@ -8,9 +8,9 @@ from modal_or_local import setup_image, ModalOrLocal
 # PRW todo - write custom runner for pytest to run this?
 
 image = setup_image()
-app = modal.App("test_read_notices_in_modal_volume")
+app = modal.App("test_modal_or_local")
 
-MODAL_VOLUME_NAME = "my_modal_test_volume"
+MODAL_VOLUME_NAME = "test_modal_or_local_volume"
 MODAL_VOLUME_MOUNT_DIR = "/test_mnt_dir"
 mvol = ModalOrLocal(volume_name=MODAL_VOLUME_NAME, volume_mount_dir = MODAL_VOLUME_MOUNT_DIR)
 
