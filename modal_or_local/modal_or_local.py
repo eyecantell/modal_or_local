@@ -263,18 +263,10 @@ class ModalOrLocal:
     
     def get_mtime(self, full_path) -> int:
         '''Returns most recent modified time (in seconds) of the given file/dir'''
-        if modal.is_local() and self.volume:
-            # Get the file info from the volume
-            prepped_path = self.path_without_volume_mount_dir(full_path, volume_mount_dir_required=True)
-            entries = []
-            for f in self.volume.iterdir(prepped_path):
-                print(f)
-                entries.append(f)
-            print(f"{entries=}")
-        else:
-            # Get the file info from the local filesystem
-            os.path.getmtime(full_path)
-
+        fe = self.get_FileEntry(full_path)
+        if fe is None: return None
+        return fe.mtime
+        
     def get_FileEntry(self, full_path) -> FileEntry:
         '''Return a modal.volume.FileEntry for the given path if it exists.'''
 
@@ -287,7 +279,7 @@ class ModalOrLocal:
             prepped_path = self.path_without_volume_mount_dir(full_path, volume_mount_dir_required=True)
             # volume.iterdir expects paths to be relative from "/", so remove any leading slash
             if prepped_path != "/" and prepped_path.startswith('/'): prepped_path=prepped_path.replace("/","",1)
-            print(f"{prepped_path=}")
+            #print(f"{prepped_path=}")
 
             # Modal does not make getting a FileEntry for '/' available, so return a placeholder
             if prepped_path == "/": 
