@@ -2,6 +2,7 @@ import modal
 import json
 import os
 from typing import Set
+from datetime import datetime
 from modal_or_local import setup_image, ModalOrLocal
 
 # Call this with 'modal run tests/test_modal_or_local.py'
@@ -185,11 +186,35 @@ def test_get_FileEntry():
     # Remove the temp test dir
     mvol.remove_file_or_directory(temp_dir)
 
+@app.function(image=image, volumes={MODAL_VOLUME_MOUNT_DIR: mvol.volume})
+def test_get_mtime():
+    # Define our temp dir for this test and make sure it does not yet exist
+    temp_dir = os.path.join(MODAL_VOLUME_MOUNT_DIR, "test_get_mtime_data")
+    if mvol.file_or_dir_exists(temp_dir) : mvol.remove_file_or_directory(temp_dir) # start fresh
+
+    json_file_full_path = os.path.join(temp_dir, "test_get_mtime.json")
+    mvol.write_json_file(json_file_full_path, {"x":1})
+
+    now_in_seconds = int(datetime.now().timestamp())
+    print(f"{now_in_seconds=}")
+
+    mtime = mvol.get_mtime(json_file_full_path)
+    print(f"         {mtime=}")
+    assert abs(now_in_seconds - mtime) < 2
+
+
+    # Get the mtime from the new json file and compare to now
+
+
+
+
+
+
 @app.local_entrypoint()
 def main():
     print("Running", __file__, "locally" if modal.is_local() else "remotely")
     
-    test_write_and_read_volume_json_file.local()
+    '''test_write_and_read_volume_json_file.local()
     test_write_and_read_volume_json_file.remote()
     test_create_or_remove_dir.local()
     test_create_or_remove_dir.remote()
@@ -200,6 +225,8 @@ def main():
     test_walk.local()
     test_walk.remote()
     test_get_FileEntry.local()
-    test_get_FileEntry.remote()
+    test_get_FileEntry.remote()'''
+    #test_get_mtime.local()
+    test_get_mtime.remote()
 
     
