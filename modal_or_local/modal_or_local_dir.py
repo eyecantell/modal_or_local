@@ -37,6 +37,9 @@ class ModalOrLocalDir:
         if self.modal_or_local.volume and not self.modal_or_local.path_starts_with_volume_mount_dir(self.dir_full_path):
             raise RuntimeError(f"ModalOrLocalDir in volume full path expected to start with volume mount dir {self.modal_or_local.volume_name=}, {self.dir_full_path=}")
 
+    def get_full_path(self, filename : str) -> str:
+        return os.path.join(self.dir_full_path, filename)
+    
     def __str__(self):
         return __class__.__name__ + f"(dir_full_path={self.dir_full_path}, modal_or_local={self.modal_or_local})"
     
@@ -44,16 +47,13 @@ class ModalOrLocalDir:
         self.modal_or_local.listdir(self.dir_full_path)
 
     def write_json_file(self, new_json_filename: str, metadata : Any, force: bool = True):
-        new_json_file_full_path = os.path.join(self.dir_full_path, new_json_filename)
-        return self.modal_or_local.write_json_file(new_json_file_full_path=new_json_file_full_path, metadata=metadata, force=force)
+        return self.modal_or_local.write_json_file(new_json_file_full_path=self.get_full_path(new_json_filename), metadata=metadata, force=force)
     
     def read_json_file(self, json_filename: str):
-        json_file_full_path = os.path.join(self.dir_full_path, json_filename)
-        return self.modal_or_local.read_json_file(json_file_full_path=json_file_full_path)
+        return self.modal_or_local.read_json_file(json_file_full_path=self.get_full_path(json_filename))
     
     def file_or_dir_exists(self, filename: str):
-        full_path = os.path.join(self.dir_full_path, filename)
-        return self.modal_or_local.file_or_dir_exists(full_path==full_path)
+        return self.modal_or_local.file_or_dir_exists(full_path=self.get_full_path(filename))
 
     def get_changes(self, since_datetime : Optional[datetime] = None) -> Dict:
         '''Return a list of changes in this directory since the given datetime'''
