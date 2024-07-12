@@ -25,7 +25,13 @@ class ModalOrLocal:
 
         #print(f"ModalOrLocal init setting {volume_name=}, {volume_mount_dir=}")
 
+    def __str__(self):
+        props = []
+        if self.volume_name: props.append(f"volume_name={self.volume_name}")
+        if self.volume_mount_dir: props.append(f"volume_mount_dir={self.volume_mount_dir}")
+        return __class__.__name__ + "(" + ", ".join(props) + ")"
 
+    
     def read_json_file(self, json_file_full_path : str) -> Any:
         '''Load json from the given file - works on filesystem or on volume'''
         if modal.is_local() and self.volume:
