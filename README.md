@@ -3,6 +3,8 @@ File and directory utilities for working with modal volumes. The modal_or_local 
 
 See scripts/example.py and tests/test_modal_or_local.py for code samples.
 
+This package is expected to work on any Linux type system and has been tested on WSL.  Working from Windows will have issues primarily becuase of the extensive use of os.path tools that are presumed to give Linux-style paths to work on Modal.
+
 ## Usage
 ```python
 import modal
