@@ -38,25 +38,34 @@ class ModalOrLocalDir:
             raise RuntimeError(f"ModalOrLocalDir in volume full path expected to start with volume mount dir {self.modal_or_local.volume_name=}, {self.dir_full_path=}")
 
     def get_full_path(self, filename : str) -> str:
+        '''Prepend the directory path to the given filename. File may or may not exist'''
         return os.path.join(self.dir_full_path, filename)
     
     def __str__(self):
         return __class__.__name__ + f"(dir_full_path={self.dir_full_path}, modal_or_local={self.modal_or_local})"
     
     def listdir(self)->List:
+        '''Return a (non-recursive) list of files/directories in the given path'''
         self.modal_or_local.listdir(self.dir_full_path)
 
-    def write_json_file(self, new_json_filename: str, metadata : Any, force: bool = True):
-        return self.modal_or_local.write_json_file(new_json_file_full_path=self.get_full_path(new_json_filename), metadata=metadata, force=force)
+    def write_json_file(self, json_filename: str, metadata : Any, force: bool = True):
+        '''Write a json file to the directory. This will overwrite existing and create any needed parent/sub directories automatically.'''
+        return self.modal_or_local.write_json_file(new_json_file_full_path=self.get_full_path(json_filename), metadata=metadata, force=force)
     
-    def read_json_file(self, json_filename: str):
+    def read_json_file(self, json_filename: str) -> Any:
+        '''Load json from the given file'''
         return self.modal_or_local.read_json_file(json_file_full_path=self.get_full_path(json_filename))
     
-    def file_or_dir_exists(self, filename: str):
+    def file_or_dir_exists(self, filename: str) -> bool:
+        '''Returns true if the passed file or directory exists in our directory'''
         return self.modal_or_local.file_or_dir_exists(full_path=self.get_full_path(filename))
+    
+    def get_mtime(self, filename: str) -> int:
+        '''Returns modified time (in seconds since epoch) of the given file/dir in our directory'''
+        return self.modal_or_local.get_mtime(full_path=self.get_full_path(filename))
 
     def get_changes(self, since_datetime : Optional[datetime] = None) -> Dict:
-        '''Return a list of changes in this directory since the given datetime'''
+        '''Return a list of changes in this directory since the given datetime (inclusive)'''
 
         report = {
             "new_files": [],
@@ -80,14 +89,14 @@ class ModalOrLocalDir:
                 for file in files:
                     full_path = os.path.join(path, file)
                     mtime = self.modal_or_local.get_mtime(full_path)
-                    if mtime > since_datetime.timestamp():
+                    if mtime >= since_datetime.timestamp():
                         report["new_files"].append(full_path)
-                    elif mtime > since_datetime:
+                    elif mtime >= since_datetime.timestamp():
                         report["modified_files"].append(full_path)
                 for dir in dirs:
                     full_path = os.path.join(path, dir)
                     mtime = self.modal_or_local.get_mtime(full_path)
-                    if mtime > since_datetime.timestamp():
+                    if mtime >= since_datetime.timestamp():
                         report["new_directories"].append(full_path)
 
         return report
