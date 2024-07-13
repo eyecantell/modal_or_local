@@ -263,7 +263,7 @@ class ModalOrLocal:
             if not os.path.isdir(dir_full_path) : os.makedirs(dir_full_path)
 
     
-    def get_mtime(self, full_path) -> int:
+    def get_mtime(self, full_path) -> float:
         '''Returns most recent modified time (in seconds) of the given file/dir'''
         fe = self.get_FileEntry(full_path)
         if fe is None: return None
