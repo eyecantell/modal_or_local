@@ -70,7 +70,6 @@ class ModalOrLocal:
 
         else: # Writing to local filesystem or writing to mounted volume while running remotely
             # Create the directories if they do not already exist
-            print(f"{os.path.dirname(new_json_file_full_path)=}")
             os.makedirs(os.path.dirname(new_json_file_full_path), exist_ok=True)
             with open(new_json_file_full_path, 'w') as f:
                 json.dump(metadata, f, indent=4)
@@ -92,6 +91,7 @@ class ModalOrLocal:
 
         else: # Writing to local filesystem or writing to mounted volume while running remotely
 
+            os.makedirs(os.path.dirname(new_file_full_path), exist_ok=True)
             with open(new_file_full_path, 'wb') as f:
                 f.write(encoded_content)
             #print("Wrote encoded_content to", new_file_full_path)
