@@ -21,7 +21,7 @@ class ModalOrLocalDir:
         '''Full path of the directory - should include volume mount if on a volume'''
 
         from modal_or_local import ModalOrLocal
-        
+
         # Set self.modal_or_local
         if modal_or_local: 
             self.modal_or_local = modal_or_local 
@@ -74,9 +74,8 @@ class ModalOrLocalDir:
         '''Return a list of changes in this directory since the given datetime (inclusive)'''
 
         report = {
-            "new_files": [],
-            "modified_files": [],
-            "new_directories": [],
+            "new_or_modified_files": [],
+            "new_or_modified_directories": [],
         }
 
         if since_datetime is None:
@@ -85,24 +84,25 @@ class ModalOrLocalDir:
             for path, dirs, files in self.modal_or_local.walk(self.dir_full_path):
                 print(f"Walking {path=}, {dirs=}, {files=}")
                 for file in files:
-                    report["new_files"].append(os.path.join(path, file))
+                    report["new_or_modified_files"].append(os.path.join(path, file))
                 for dir in dirs:
-                    report["new_directories"].append(os.path.join(path, dir))
+                    report["new_or_modified_directories"].append(os.path.join(path, dir))
         else:
             # Check for changes since the since_datetime
+            print(f"{since_datetime.timestamp()=}")
             for path, dirs, files in self.modal_or_local.walk(self.dir_full_path):
                 print(f"Walking {path=}, {dirs=}, {files=}")
                 for file in files:
                     full_path = os.path.join(path, file)
                     mtime = self.modal_or_local.get_mtime(full_path)
+                    print(f"  mtime of {full_path} is {mtime}")
                     if mtime >= since_datetime.timestamp():
-                        report["new_files"].append(full_path)
-                    elif mtime >= since_datetime.timestamp():
-                        report["modified_files"].append(full_path)
+                        report["new_or_modified_files"].append(full_path)
                 for dir in dirs:
                     full_path = os.path.join(path, dir)
                     mtime = self.modal_or_local.get_mtime(full_path)
+                    print(f"  mtime of {full_path} is {mtime}")
                     if mtime >= since_datetime.timestamp():
-                        report["new_directories"].append(full_path)
+                        report["new_or_modified_directories"].append(full_path)
 
         return report

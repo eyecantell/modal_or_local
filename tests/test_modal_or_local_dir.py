@@ -49,31 +49,47 @@ def test_get_changes():
     print(changes)
 
     # Check that we got the expected changes
-    assert changes == {'new_files': [temp_dir + '/' + json_filename], 
-                       'modified_files': [], 
-                       'new_directories': [temp_dir + '/' + subdir_name]
+    assert changes == {'new_or_modified_files': [mdir.get_full_path(json_filename)], 
+                       'new_or_modified_directories': [mdir.get_full_path(subdir_name)]
                        }
     
     # Add a new file and edit our original json file then make sure those changes show up when we get_changes
+
+    # Capture the mtime so we can use it
     mtime = mdir.get_mtime(json_filename) + 1 # Add one to not include the original
-    
-    subdirs_subdir_name = "my_subdirs_subdir"
+
+    # Edit (actually replace) our original json file and virfy the changed data
     new_data : dict = read_data
     new_data["new_key"] = "my_new_value"
-    # Edit (actually replace) our original json file 
     mdir.write_json_file(json_filename, new_data)
-
-    # Create a new json file in a new subdir
-    mdir.write_json_file(os.path.join(subdirs_subdir_name, json_filename), {"x":1})
 
     read_data = mdir.read_json_file(json_filename)
     assert read_data is not None
     assert read_data.get('a') == 1
     assert read_data.get('new_key') == "my_new_value"
 
-    # Get changes again and verify json file change and get the new changes
+    # Create a new json file in a new subdir
+    subdirs_subdir_name = "my_subdirs_subdir"
+    new_json_file = os.path.join(subdir_name, subdirs_subdir_name, json_filename)
+    mdir.write_json_file(new_json_file, {"x":1})
+
+    read_data = mdir.read_json_file(new_json_file)
+    assert read_data.get('x') == 1
+
+    # Get changes again and verify the json file change and the new subdir and json file are there
     new_changes = mdir.get_changes(datetime.fromtimestamp(mtime))
     print(f"{new_changes=}")
+    expected_changes = {
+        'new_or_modified_files': [mdir.get_full_path(json_filename), mdir.get_full_path(new_json_file)], 
+        'new_or_modified_directories': [mdir.get_full_path(subdirs_subdir_name)]}
+    
+    # Check changes in an order agnostic way
+    # Make sure new or modified files are correct
+    for path in [mdir.get_full_path(json_filename), mdir.get_full_path(new_json_file)]:
+        assert path in new_changes['new_or_modified_files'], f"{path} not in {new_changes['new_or_modified_files']=}"
+    assert len(new_changes['new_or_modified_files']) == 2, f"Extra entries in {new_changes['new_or_modified_files']=}"
+    
+    assert new_changes['new_or_modified_directories'] == expected_changes['new_or_modified_directories'], f"Expected new_or_modified_directories:\n {expected_changes['new_or_modified_directories']} but got \n{new_changes['new_or_modified_directories']}"
 
     # Remove the test directory and verify it was actually deleted
     mvol.remove_file_or_directory(temp_dir)
@@ -86,9 +102,7 @@ def test_get_changes():
 def main():
     print("Running", __file__, "locally" if modal.is_local() else "remotely")
     
-    for test in [test_get_changes]:
-        test.local()
     #test_get_changes.local()
-    #test_get_changes.remote()
+    test_get_changes.remote()
 
     

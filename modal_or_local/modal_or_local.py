@@ -218,7 +218,7 @@ class ModalOrLocal:
                 else:
                     filenames.append(os.path.basename(entry.path))
 
-            print("yielding", (os.path.join(self.volume_mount_dir, dirpath), dirnames, filenames))
+            #print("yielding", (os.path.join(self.volume_mount_dir, dirpath), dirnames, filenames))
             yield (os.path.join(self.volume_mount_dir, dirpath), dirnames, filenames)
 
             # Walk the other directories found
@@ -323,7 +323,7 @@ class ModalOrLocal:
 
         else:
             # Get the file info from the local filesystem
-            print(f"Getting FileEntry for {full_path=} from filesystem")
+            #print(f"Getting FileEntry for {full_path=} from filesystem")
             path = Path(full_path)
             if not path.exists(): return False
             entry_type = FileEntryType.FILE if path.is_file() else FileEntryType.DIRECTORY if path.is_dir() else None

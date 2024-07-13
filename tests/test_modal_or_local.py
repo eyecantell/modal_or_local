@@ -225,8 +225,8 @@ def main():
     test_walk.local()
     test_walk.remote()
     test_get_FileEntry.local()
-    test_get_FileEntry.remote()'''
-    #test_get_mtime.local()
-    test_get_mtime.remote()
+    test_get_FileEntry.remote()
+    test_get_mtime.local()
+    test_get_mtime.remote()'''
 
     
