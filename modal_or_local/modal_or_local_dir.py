@@ -1,21 +1,27 @@
 import os
 from typing import Any, Dict, List, Optional
 
-from modal_or_local import ModalOrLocal
 import logging
 from datetime import datetime
+
 import modal_or_local.logging_config
 logger = logging.getLogger("modal_or_local." + __name__)
 from warnings import warn
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from modal_or_local import ModalOrLocal
+
 class ModalOrLocalDir:
     '''Class to do directory things and sync between modal volumes and/or local filesystems'''
 
-    def __init__(self,  dir_full_path : str, modal_or_local : Optional[ModalOrLocal] = None, volume_name : Optional[str] = None, volume_mount_dir : Optional[str] = None):
+    def __init__(self,  dir_full_path : str, modal_or_local : Optional['ModalOrLocal'] = None, volume_name : Optional[str] = None, volume_mount_dir : Optional[str] = None):
         '''Expects dir_full_path and either modal_or_local or (volume_name and volume_mount_dir) to be passed'''
         self.dir_full_path = os.path.normpath(dir_full_path)
         '''Full path of the directory - should include volume mount if on a volume'''
 
+        from modal_or_local import ModalOrLocal
+        
         # Set self.modal_or_local
         if modal_or_local: 
             self.modal_or_local = modal_or_local 
