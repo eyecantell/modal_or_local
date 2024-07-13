@@ -69,7 +69,9 @@ class ModalOrLocal:
             #print("Put json metadata file to", prepped_path)
 
         else: # Writing to local filesystem or writing to mounted volume while running remotely
-
+            # Create the directories if they do not already exist
+            print(f"{os.path.dirname(new_json_file_full_path)=}")
+            os.makedirs(os.path.dirname(new_json_file_full_path), exist_ok=True)
             with open(new_json_file_full_path, 'w') as f:
                 json.dump(metadata, f, indent=4)
             #print("Wrote metadata to", new_json_file_full_path)
