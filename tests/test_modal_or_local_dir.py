@@ -62,24 +62,42 @@ def test_get_changes():
     assert len(initial_changes.get('new_or_modified_directories')) == 2, f"Expected 2, but got {len(initial_changes.get('new_or_modified_directories'))} entries in new_or_modified_directories: {initial_changes.get('new_or_modified_directories')}"
 
     # Capture the mtime so we can use it to only get the next set of new files/dirs
-    mtime = mdir.get_mtime(subdirs_subdir_relative_path) + .001  # add a smidge to not get the file mtime was pulled from in the next set
-    sleep(1) if modal.is_local() else sleep(.002) # pause momentarily to make sure mtimes actually differ (unfortunately modal mtime requires 1s)
+    mtime = mdir.get_mtime(subdirs_subdir_relative_path) + .001  # add a smidge to not get the file mtime was pulled from in the next set, we will sleep it off next
+    sleep(1) if modal.is_local() else sleep(1) # pause momentarily to make sure mtimes actually differ (unfortunately modal mtime is int so requires 1s)
 
     # Do the following in temp_dir:
     # Edit ./my_subdir/test_get_changes.json - path relative to temp_dir is <json_file_relative_path>
     print(f"\ntest_get_changes: Editing ./my_subdir/test_get_changes.json, mtime is {mtime}")
 
+    mtime_before = {
+        json_file_relative_path: mdir.get_mtime(json_file_relative_path),
+        subdir_name: mdir.get_mtime(subdir_name),
+        subdirs_subdir_relative_path: mdir.get_mtime(subdirs_subdir_relative_path),
+    }
+
     # Edit (actually replace) our original json file and verify the changed data
     read_data["new_key"] = "my_new_value"
     mdir.write_json_file(json_file_relative_path, read_data)
+    sleep(1)
 
     changed_read_data = mdir.read_json_file(json_file_relative_path)
     assert changed_read_data is not None
     assert changed_read_data.get('a') == 1
     assert changed_read_data.get('new_key') == "my_new_value"
 
+    mtime_after = {
+        json_file_relative_path: mdir.get_mtime(json_file_relative_path),
+        subdir_name: mdir.get_mtime(subdir_name),
+        subdirs_subdir_relative_path: mdir.get_mtime(subdirs_subdir_relative_path),
+    }
+
+    for path in mtime_before.keys():
+        before = mtime_before.get(path)
+        after = mtime_after.get(path)
+        print(f"    {path}: before {before}, after {after}, difference: {after-before}")
+
     after_edit_changes = mdir.get_changes(datetime.fromtimestamp(mtime))
-    print(f"After json edit {after_edit_changes=}")
+    print(f"After json edit {after_edit_changes=}, edited mtime of json_file is {mdir.get_mtime(json_file_relative_path)}")
 
     expected_changes = {
         'new_or_modified_files': [mdir.get_full_path(json_file_relative_path)], 
@@ -89,7 +107,7 @@ def test_get_changes():
 
     # Capture the mtime so we can use it to only get the next set of new files/dirs
     mtime = mdir.get_mtime(json_file_relative_path) + .001  # add a smidge to not get the file mtime was pulled from in the next set
-    sleep(1) if modal.is_local() else sleep(.002) # pause momentarily to make sure mtimes actually differ (unfortunately modal mtime requires 1s)
+    sleep(1) if modal.is_local() else sleep(1) # pause momentarily to make sure mtimes actually differ (unfortunately modal mtime requires 1s)
 
     # Do the following in temp_dir:
     # Create ./my_subdir/my_subdirs_subdir/new_json_file.json - path relative to temp_dir saved as <new_json_file_relative_path>
