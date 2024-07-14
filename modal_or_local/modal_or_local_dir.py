@@ -70,6 +70,10 @@ class ModalOrLocalDir:
         '''Returns modified time (in seconds since epoch) of the given file/dir in our directory'''
         return self.modal_or_local.get_mtime(full_path=self.get_full_path(filename))
 
+    def get_FileEntry(self, filename: str) -> float:
+        '''Return a modal.volume.FileEntry for the given path (relative to our directory) if it exists.'''
+        return self.modal_or_local.get_FileEntry(full_path=self.get_full_path(filename))
+
     def get_changes(self, since_datetime : Optional[datetime] = None) -> Dict:
         '''Return a list of changes in this directory since the given datetime (inclusive)'''
 
@@ -97,12 +101,18 @@ class ModalOrLocalDir:
                     mtime = self.modal_or_local.get_mtime(full_path)
                     print(f"  mtime of file {full_path} is {mtime}")
                     if mtime >= since_datetime.timestamp():
+                        print("  adding file", full_path, mtime-since_datetime.timestamp())
                         report["new_or_modified_files"].append(full_path)
+                    else:
+                        print("  not adding file", full_path, mtime-since_datetime.timestamp())
                 for dir in dirs:
                     full_path = os.path.join(path, dir)
                     mtime = self.modal_or_local.get_mtime(full_path)
                     print(f"  mtime of dir {full_path} is {mtime}")
                     if mtime >= since_datetime.timestamp():
                         report["new_or_modified_directories"].append(full_path)
+                        print("  adding dir", full_path, mtime-since_datetime.timestamp())
+                    else:
+                        print("  not adding dir", full_path, mtime-since_datetime.timestamp())
 
         return report

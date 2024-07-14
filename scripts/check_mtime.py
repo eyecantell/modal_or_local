@@ -53,7 +53,7 @@ def test_mtime():
         print(f"After mydir and tmp_remote.txt created, running remotely")
         for f in [new_file_full_path, "/test_mnt_dir/mydir"]:
             path = Path(f)
-            print(f"mtime={path.mtime} {path}")
+            print(f"mtime={path.stat().st_mtime} {path}")
         sleep(2)
 
         new_file_full_path2 = '/test_mnt_dir/mydir/tmp_remote2.txt'
