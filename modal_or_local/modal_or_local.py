@@ -174,7 +174,7 @@ class ModalOrLocal:
         '''Return a (non-recursive) list of files/directories in the given path on either the filesystem or a modal volume'''
         list_to_return = []
         if modal.is_local() and self.volume:
-            # Remove the volume mount dir if it was passed as part of the full path
+            # Remove the volume mount dir from the path if it was passed as part of the full path
             prepped_path = self.path_without_volume_mount_dir(dir_full_path, volume_mount_dir_required=True)
             for f in self.volume.iterdir(prepped_path):
                 if return_full_paths:
@@ -332,17 +332,17 @@ class ModalOrLocal:
             return FileEntry(path=path_to_return, type=entry_type, mtime=path.stat().st_mtime, size=path.stat().st_size)
 
     def isdir(self, full_path) -> bool:
+        '''Return true if the given path exists and is a directory'''
         fe = self.get_FileEntry(full_path)
-        #print("file_or_dir_exists:", f"{fe=}")
+        if fe is None: return False
         if fe.type == FileEntryType.DIRECTORY: return True
         return False
     
     def isfile(self, full_path) -> bool:
+        '''Return true if the given path exists and is a file'''
         fe = self.get_FileEntry(full_path)
-        #print("file_or_dir_exists:", f"{fe=}")
+        if fe is None: return False
         if fe.type == FileEntryType.FILE: return True
         return False
-
-
 
 
