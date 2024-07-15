@@ -1,7 +1,8 @@
 import modal
 import json
 import os
-from modal_or_local import setup_image, ModalOrLocal, copy_file, copy_dir, copy
+from modal_or_local import setup_image, ModalOrLocal
+from modal_or_local.modal_or_local_copy import copy, copy_dir, copy_file
 
 # Call this with 'modal run tests/test_modal_or_local_dir.py'
 # PRW todo - write custom runner for pytest to run this?
