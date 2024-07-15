@@ -26,6 +26,9 @@ def test_copy_local_file_to_volume():
 
     print("\n\nRunning test_copy_local_to_volume", "locally" if modal.is_local() else "remotely")
 
+    if not modal.is_local():
+        raise RuntimeError("Cannot run test_copy_local_file_to_volume remotely since /tmp is not mounted")
+
     # Create the test file locally
     temp_dir_name = "test_copy_local_file_to_volume_dir"
     temp_dir_local = os.path.join("/tmp", temp_dir_name)
@@ -119,11 +122,64 @@ def test_copy_file_from_volume_to_volume():
     assert not mocal_for_volume_one.file_or_dir_exists(temp_dir_volume_one)
     assert not mocal_for_volume_two.file_or_dir_exists(temp_dir_volume_two)
     print("Running test_copy_file_from_volume_to_volume", "locally" if modal.is_local() else "remotely", "finished")
+
+@app.function(image=image, volumes={MODAL_VOLUME_MOUNT_DIR_ONE: mocal_for_volume_one.volume}) 
+def test_copy_file_from_volume_to_local():
+    print("\n\nRunning test_copy_file_from_volume_to_local", "locally" if modal.is_local() else "remotely")
+
+    if not modal.is_local():
+        raise RuntimeError("Cannot run test_copy_file_from_volume_to_local remotely since /tmp is not mounted")
+    
+    # Set the name of the temporary directories that will be used on volumes one and two
+    temp_dir_name = "test_copy_file_from_volume_to_local_dir"
+    temp_dir_volume_one = os.path.join(mocal_for_volume_one.volume_mount_dir, temp_dir_name)
+    temp_dir_local = os.path.join("/tmp", temp_dir_name)
+    os.makedirs(temp_dir_local, exist_ok=True)
+
+    # Create a json file on volume one
+    test_json_data = json.loads('{"a":11, "b":22}')
+    test_file_full_path_volume1 = os.path.join(temp_dir_volume_one, "test.json")
+    mocal_for_volume_one.write_json_file(test_file_full_path_volume1, test_json_data) 
+
+    assert mocal_for_volume_one.file_or_dir_exists(test_file_full_path_volume1), f"Count not find file created on volume one {test_file_full_path_volume1=}"
+
+    # Copy the file from volume one to local filesystem, naming the destination file explicitly
+    destination_file_full_path = os.path.join(temp_dir_local, "named_dest_test.json")
+    copy_file(source_mocal=mocal_for_volume_one, source_file_full_path=test_file_full_path_volume1, \
+              destination_mocal=mocal_for_local, destination_full_path=destination_file_full_path)
+    
+    # Make sure the file was copied to the local filesystem and contains the expected info
+    assert mocal_for_local.file_or_dir_exists(destination_file_full_path), f"Could not find named file copied to local {destination_file_full_path=}"
+    read_data = mocal_for_local.read_json_file(destination_file_full_path)
+    assert read_data is not None
+    assert read_data.get('a') == 11
+    assert read_data.get('b') == 22
+
+    # Copy the file from modal volume one to modal volume2, naming the destination directory
+    destination_directory = temp_dir_local
+    copy_file(source_mocal=mocal_for_volume_one, source_file_full_path=test_file_full_path_volume1, \
+              destination_mocal=mocal_for_local, destination_full_path=destination_directory)
+    
+    # Make sure the file was copied over to volume two and contains the expected info
+    destination_file_full_path = os.path.join(destination_directory, "test.json")
+    assert mocal_for_local.file_or_dir_exists(destination_file_full_path), f"Could not find file copied to local dir {destination_file_full_path=}"
+    read_data = mocal_for_local.read_json_file(destination_file_full_path)
+    assert read_data is not None
+    assert read_data.get('a') == 11
+    assert read_data.get('b') == 22
+
+    # Remove the temporary dirs and verify they are gone
+    mocal_for_volume_one.remove_file_or_directory(temp_dir_volume_one)
+    mocal_for_local.remove_file_or_directory(temp_dir_local)
+    assert not mocal_for_volume_one.file_or_dir_exists(temp_dir_volume_one)
+    assert not mocal_for_local.file_or_dir_exists(temp_dir_local)
+    print("Running test_copy_file_from_volume_to_local", "locally" if modal.is_local() else "remotely", "finished")
     
 @app.local_entrypoint()
 def main():  
-    '''test_copy_local_file_to_volume.local()'''
+    test_copy_local_file_to_volume.local()
     test_copy_file_from_volume_to_volume.local()
     test_copy_file_from_volume_to_volume.remote()
+    test_copy_file_from_volume_to_local.local()
 
     
