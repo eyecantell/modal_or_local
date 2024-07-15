@@ -74,7 +74,7 @@ def test_create_or_remove_dir():
     for dir_to_create in ["test_create_or_remove_dir_data", "/test_create_or_remove_dir_data/test/a/b/c"]:
         if dir_to_create.startswith("/"): dir_to_create = dir_to_create.replace("/","")
         dir_to_create_full_path = os.path.join(mocal.volume_mount_dir, dir_to_create)
-        print(f"Creating '{dir_to_create_full_path=}'")
+        #print(f"Creating '{dir_to_create_full_path=}'")
         mocal.create_directory(dir_to_create_full_path)
         assert mocal.file_or_dir_exists(dir_to_create_full_path)
         mocal.remove_file_or_directory(dir_to_create_full_path)
@@ -196,10 +196,10 @@ def test_get_mtime():
     mocal.write_json_file(json_file_full_path, {"x":1})
 
     now_in_seconds = int(datetime.now().timestamp())
-    print(f"{now_in_seconds=}")
+    #print(f"{now_in_seconds=}")
 
     mtime = mocal.get_mtime(json_file_full_path)
-    print(f"         {mtime=}")
+    #print(f"         {mtime=}")
     assert abs(now_in_seconds - mtime) < 2
 
 
