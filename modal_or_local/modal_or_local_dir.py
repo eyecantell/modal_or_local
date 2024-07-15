@@ -74,9 +74,9 @@ class ModalOrLocalDir:
         '''Return a modal.volume.FileEntry for the given path (relative to our directory) if it exists.'''
         return self.modal_or_local.get_FileEntry(full_path=self.get_full_path(filename))
 
-    def get_changes(self, since_datetime : Optional[datetime] = None) -> Dict:
-        '''Return a list of files that changed in this directory since the given datetime (inclusive)
-           Note this tries to give changed directories as well, but the mtimes on the modal volume directories are unreliable (maybe caching?). 
+    def report_changes(self, since_datetime : Optional[datetime] = None) -> Dict:
+        '''Return files/dirs that have changed in this directory since the given datetime (inclusive)
+           Note this tries to give changed directories as well, but the mtimes changing on modal volume directories seems to be unreliable (maybe caching?). 
            It will catch new directories but may or may not catch changed ones (ones with new/modified entries)'''
 
         report = {
@@ -113,3 +113,7 @@ class ModalOrLocalDir:
                         report["new_or_modified_directories"].append(full_path)
 
         return report
+    
+    def copy_changes_from(self, mocal_dir : 'ModalOrLocalDir', since_date: datetime):
+        '''Copy files/dirs that have changed since the given date and are newer than what is currently in this directory'''
+        pass
