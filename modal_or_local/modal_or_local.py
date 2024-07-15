@@ -126,7 +126,7 @@ class ModalOrLocal:
             # Make sure there is a leading slash in the case of a bare filename passed
             
             prepped_path = self.path_without_volume_mount_dir(file_or_dir_to_remove_full_path, volume_mount_dir_required=True)
-            print(f"Removing {prepped_path} ({file_or_dir_to_remove_full_path}) from volume", self.volume_name)
+            #print(f"Removing {prepped_path} ({file_or_dir_to_remove_full_path}) from volume", self.volume_name)
             self.volume.remove_file(prepped_path, recursive=True)
         else:
             # Remove directly from the filesystem or mounted volume
