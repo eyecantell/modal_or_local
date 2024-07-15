@@ -325,7 +325,7 @@ class ModalOrLocal:
             # Get the file info from the local filesystem
             #print(f"Getting FileEntry for {full_path=} from filesystem")
             path = Path(full_path)
-            if not path.exists(): return False
+            if not path.exists(): return None
             entry_type = FileEntryType.FILE if path.is_file() else FileEntryType.DIRECTORY if path.is_dir() else None
             path_to_return = str(path)
             if path_to_return.startswith("/"): path_to_return=path_to_return.replace("/","",1)
