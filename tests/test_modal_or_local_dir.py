@@ -51,7 +51,7 @@ def test_get_changes():
     assert mdir.file_or_dir_exists(subdirs_subdir_relative_path)
 
     # Get the changes
-    initial_changes = mdir.get_changes()
+    initial_changes = mdir.report_changes()
 
     # Check that we got the expected changes (in an order agnostic way)
     assert initial_changes.get('new_or_modified_files') == [mdir.get_full_path(json_file_relative_path)], f"Expected new_or_modified_files to be {[mdir.get_full_path(json_file_relative_path)]} but got {initial_changes.get('new_or_modified_files')}"
@@ -95,7 +95,7 @@ def test_get_changes():
         after = mtime_after.get(path)
         #print(f"    {path}: before {before}, after {after}, difference: {after-before}")
 
-    after_edit_changes = mdir.get_changes(datetime.fromtimestamp(mtime))
+    after_edit_changes = mdir.report_changes(datetime.fromtimestamp(mtime))
    #print(f"After json edit {after_edit_changes=}, edited mtime of json_file is {mdir.get_mtime(json_file_relative_path)}")
 
     expected_changes = {
@@ -122,7 +122,7 @@ def test_get_changes():
     assert read_data.get('x') == 1
 
     # Get changes again and verify the subdir and subdirs_subdir (since a file was added) and new json file are there
-    after_new_json_changes = mdir.get_changes(datetime.fromtimestamp(mtime))
+    after_new_json_changes = mdir.report_changes(datetime.fromtimestamp(mtime))
    #print(f"{after_new_json_changes=}")
     expected_changes = {
         'new_or_modified_files': [mdir.get_full_path(new_json_file_relative_path)], 
