@@ -73,7 +73,7 @@ class ModalOrLocal:
             os.makedirs(os.path.dirname(new_json_file_full_path), exist_ok=True)
             with open(new_json_file_full_path, 'w') as f:
                 json.dump(metadata, f, indent=4)
-            print("Wrote metadata to", new_json_file_full_path, "mtime is", self.get_mtime(new_json_file_full_path))
+            #print("Wrote metadata to", new_json_file_full_path, "mtime is", self.get_mtime(new_json_file_full_path))
 
     def write_file(self, new_file_full_path: str, encoded_content : Any, force: bool = True):
         '''Write the encoded content to a file in either the local filesystem or to a volume. This will create any needed parent directories automatically.'''

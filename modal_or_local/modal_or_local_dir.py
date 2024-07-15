@@ -75,7 +75,9 @@ class ModalOrLocalDir:
         return self.modal_or_local.get_FileEntry(full_path=self.get_full_path(filename))
 
     def get_changes(self, since_datetime : Optional[datetime] = None) -> Dict:
-        '''Return a list of changes in this directory since the given datetime (inclusive)'''
+        '''Return a list of files that changed in this directory since the given datetime (inclusive)
+           Note this tries to give changed directories as well, but the mtimes on the modal volume directories are unreliable (maybe caching?). 
+           It will catch new directories but may or may not catch changed ones (ones with new/modified entries)'''
 
         report = {
             "new_or_modified_files": [],
@@ -84,35 +86,30 @@ class ModalOrLocalDir:
 
         if since_datetime is None:
             # Everything is considered new
-            print(f"Walking without since_datetime {self.dir_full_path=}")
+            #print(f"Walking without since_datetime {self.dir_full_path=}")
             for path, dirs, files in self.modal_or_local.walk(self.dir_full_path):
-                print(f"Walking {path=}, {dirs=}, {files=}")
+                #print(f"Walking {path=}, {dirs=}, {files=}")
                 for file in files:
                     report["new_or_modified_files"].append(os.path.join(path, file))
                 for dir in dirs:
                     report["new_or_modified_directories"].append(os.path.join(path, dir))
         else:
             # Check for changes since the since_datetime
-            print(f"Walking {since_datetime.timestamp()=} {self.dir_full_path=}")
+            #print(f"Walking {since_datetime.timestamp()=} {self.dir_full_path=}")
             for path, dirs, files in self.modal_or_local.walk(self.dir_full_path):
-                print(f"Walking {path=}, {dirs=}, {files=}")
+                #print(f"Walking {path=}, {dirs=}, {files=}")
                 for file in files:
                     full_path = os.path.join(path, file)
                     mtime = self.modal_or_local.get_mtime(full_path)
-                    print(f"  mtime of file {full_path} is {mtime}")
+                    #print(f"  mtime of file {full_path} is {mtime}")
                     if mtime >= since_datetime.timestamp():
-                        print("  adding file", full_path, mtime-since_datetime.timestamp())
+                        #print("  adding file", full_path, mtime-since_datetime.timestamp())
                         report["new_or_modified_files"].append(full_path)
-                    else:
-                        print("  not adding file", full_path, mtime-since_datetime.timestamp())
+
                 for dir in dirs:
                     full_path = os.path.join(path, dir)
                     mtime = self.modal_or_local.get_mtime(full_path)
-                    print(f"  mtime of dir {full_path} is {mtime}")
                     if mtime >= since_datetime.timestamp():
                         report["new_or_modified_directories"].append(full_path)
-                        print("  adding dir", full_path, mtime-since_datetime.timestamp())
-                    else:
-                        print("  not adding dir", full_path, mtime-since_datetime.timestamp())
 
         return report

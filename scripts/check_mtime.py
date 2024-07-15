@@ -68,28 +68,11 @@ def test_mtime():
         print(f"{os.listdir('/test_mnt_dir')}")
         
 
-  
-    
-   
-
-def create_file(new_file_full_path: str):
-    if modal.is_local():
-        # Running locally, create the new file using modal tools
-        new_file_full_path = new_file_full_path.replace("/test_mnt_dir/","",1) # remove volume mount dir and leading slash
-        with myvol.batch_upload(force=True) as batch:
-            batch.put_file(BytesIO("file text written with modal batch.put_file()".encode()), new_file_full_path)
-
-    else: 
-        # Running remotely, create the new file using os tools
-        os.makedirs(os.path.dirname(new_file_full_path), exist_ok=True)
-        with open(new_file_full_path, 'wb') as f:
-            f.write("file text written with open()".encode())
-
 @app.local_entrypoint()
 def main():
     print("Running", __file__, "locally" if modal.is_local() else "remotely")
     
-    test_mtime.local()
+    #test_mtime.local()
     test_mtime.remote()
         
     
