@@ -32,8 +32,13 @@ def copy_file(source_mocal: ModalOrLocal, source_file_full_path : str, destinati
 
         
 def copy_dir(source_mocal: ModalOrLocal, source_dir_full_path : str, destination_mocal: ModalOrLocal, destination_full_path : str):
-    '''Copy the given directory from the source_mocal to the destination_full_path on the destination_mocal.'''
-    pass
+    '''Copy the given directory (and its contents) from the source_mocal to the destination_full_path on the destination_mocal.'''
+    if not source_mocal.isdir(source_dir_full_path): 
+        raise RuntimeError(f"Could not locate dir {source_dir_full_path=} in {source_mocal=}")
+    
+    for entry in source_mocal.walk(source_dir_full_path):
+         print (entry)
+
 
 def copy(source_mocal: ModalOrLocal, source_path, destination_mocal: ModalOrLocal, target_path):
     '''Copy the source_path on the source_mocal to the target_path on the target mocal'''

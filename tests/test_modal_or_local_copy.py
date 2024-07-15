@@ -20,6 +20,10 @@ mocal_for_volume_one = ModalOrLocal(volume_name=MODAL_VOLUME_NAME_ONE, volume_mo
 mocal_for_volume_two = ModalOrLocal(volume_name=MODAL_VOLUME_NAME_TWO, volume_mount_dir = MODAL_VOLUME_MOUNT_DIR_TWO)
 mocal_for_local = ModalOrLocal()
 
+#
+# Copy file tests
+# 
+
 @app.function(image=image, volumes={MODAL_VOLUME_MOUNT_DIR_ONE: mocal_for_volume_one.volume}) 
 def test_copy_local_file_to_volume():
     '''Copy a file from local filesystem to a volume'''
@@ -174,12 +178,19 @@ def test_copy_file_from_volume_to_local():
     assert not mocal_for_volume_one.file_or_dir_exists(temp_dir_volume_one)
     assert not mocal_for_local.file_or_dir_exists(temp_dir_local)
     print("Running test_copy_file_from_volume_to_local", "locally" if modal.is_local() else "remotely", "finished")
-    
+
+#
+# Copy directory tests
+# 
+
+
 @app.local_entrypoint()
 def main():  
     test_copy_local_file_to_volume.local()
     test_copy_file_from_volume_to_volume.local()
     test_copy_file_from_volume_to_volume.remote()
     test_copy_file_from_volume_to_local.local()
+    
+
 
     
