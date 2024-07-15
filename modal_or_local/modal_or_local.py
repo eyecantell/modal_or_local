@@ -212,7 +212,7 @@ class ModalOrLocal:
             filenames = []
 
             for entry in self.volume.iterdir(prepped_path, recursive=False):
-                print(f"walk {entry=}, {prepped_path=}")
+                #print(f"walk {entry=}, {prepped_path=}")
                 if entry.type == FileEntryType.DIRECTORY:
                     dirnames.append(os.path.basename(entry.path))
                 else:
