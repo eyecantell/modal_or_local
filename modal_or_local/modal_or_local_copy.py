@@ -36,8 +36,22 @@ def copy_dir(source_mocal: ModalOrLocal, source_dir_full_path : str, destination
     if not source_mocal.isdir(source_dir_full_path): 
         raise RuntimeError(f"Could not locate dir {source_dir_full_path=} in {source_mocal=}")
     
-    for entry in source_mocal.walk(source_dir_full_path):
-         print (entry)
+    print(f"copy_dir: {destination_full_path=}")
+    for path, dirs, files in source_mocal.walk(source_dir_full_path):
+         print ("copy_dir got entry:", path, dirs, files)
+         for file in files:
+              file_source_full_path = os.path.join(path, file)
+              file_relative_path = file_source_full_path.replace(source_dir_full_path, "").replace("/", "", 1)
+              file_destination_full_path = os.path.join(destination_full_path, file_relative_path)
+              #print(f"Copying {file_source_full_path=} to {file_destination_full_path=}, {file_relative_path=}")
+              copy_file(source_mocal, file_source_full_path, destination_mocal, file_destination_full_path)
+         for dir in dirs:
+              print(f"Making sure {dir=} exists")
+              dir_source_full_path = os.path.join(path, dir)
+              dir_relative_path = dir_source_full_path.replace(source_dir_full_path, "").replace("/", "", 1)
+              dir_destination_full_path = os.path.join(destination_full_path, dir_relative_path)
+              #print(f"Making sure {dir_relative_path=} exists at {dir_destination_full_path=}, {dir_relative_path=}")
+              if not destination_mocal.isdir(dir_destination_full_path): destination_mocal.create_directory(dir_destination_full_path)
 
 
 def copy(source_mocal: ModalOrLocal, source_path, destination_mocal: ModalOrLocal, target_path):

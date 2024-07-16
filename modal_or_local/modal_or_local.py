@@ -218,7 +218,7 @@ class ModalOrLocal:
                 else:
                     filenames.append(os.path.basename(entry.path))
 
-            #print("yielding", (os.path.join(self.volume_mount_dir, dirpath), dirnames, filenames))
+            print("yielding", (os.path.join(self.volume_mount_dir, dirpath), dirnames, filenames))
             yield (os.path.join(self.volume_mount_dir, dirpath), dirnames, filenames)
 
             # Walk the other directories found

@@ -183,13 +183,72 @@ def test_copy_file_from_volume_to_local():
 # Copy directory tests
 # 
 
+@app.function(image=image, volumes={MODAL_VOLUME_MOUNT_DIR_ONE: mocal_for_volume_one.volume}) 
+def test_copy_dir_from_local_to_volume():
+    print("\n\nRunning test_copy_dir_from_local_to_volume", "locally" if modal.is_local() else "remotely")
+
+    if not modal.is_local():
+        raise RuntimeError("Cannot run test_copy_dir_from_local_to_volume remotely since /tmp is not mounted remotely")
+    
+    # Set the name of the temporary directories that will be used locally and on volumes one
+    temp_dir_name = "test_copy_file_from_volume_to_local_dir"
+    temp_dir_volume_one = os.path.join(mocal_for_volume_one.volume_mount_dir, temp_dir_name)
+    #print(f"{temp_dir_volume_one=}")
+    temp_dir_local = os.path.join("/tmp", temp_dir_name)
+    os.makedirs(temp_dir_local, exist_ok=True)
+
+    # Create a file tree locally
+    # /tmp/test_copy_file_from_volume_to_local_dir:         a.json,  b.json,  c.json
+    # /tmp/test_copy_file_from_volume_to_local_dir/subdir: aa.json, bb.json, cc.json
+    # /tmp/test_copy_file_from_volume_to_local_dir/empty_subdir <empty>
+    expected_files_relative_path = [] # relative path of expected files
+
+    # Create a.json, b.json, c.json in /tmp/test_copy_file_from_volume_to_local_dir
+    for prefix in ["a", "b", "c"]:
+        test_json_data = json.loads('{"' + prefix + '": "' + prefix + '_val"}') # e,g. {"a":"a_val"}
+        test_file_full_path_local = os.path.join(temp_dir_local, prefix + ".json")
+        mocal_for_local.write_json_file(test_file_full_path_local, test_json_data) 
+        assert mocal_for_local.file_or_dir_exists(test_file_full_path_local), f"Count not find file created on local {test_file_full_path_local=}"
+        expected_files_relative_path.append(os.path.basename(test_file_full_path_local))
+
+    # Create aa.json, bb.json, cc.json in /tmp/test_copy_file_from_volume_to_local_dir/subdir
+    for prefix in ["aa", "bb", "cc"]:
+        test_json_data = json.loads('{"' + prefix + '": "' + prefix + '_val"}') # e,g. {"aa":"aa_val"}
+        test_file_full_path_local = os.path.join(temp_dir_local, "subdir", prefix + ".json")
+        mocal_for_local.write_json_file(test_file_full_path_local, test_json_data) 
+        assert mocal_for_local.file_or_dir_exists(test_file_full_path_local), f"Count not find file created on local {test_file_full_path_local=}"
+        expected_files_relative_path.append(os.path.join("subdir", os.path.basename(test_file_full_path_local)))
+
+    # Add /tmp/test_copy_file_from_volume_to_local_dir/empty_subdir as an empty dir
+    test_empty_dir_full_path_local = os.path.join(temp_dir_local, "empty_subdir")
+    mocal_for_local.create_directory(test_empty_dir_full_path_local)
+    expected_files_relative_path.append("empty_subdir")
+
+    #print ("Expected files:\n", "\n".join(expected_files_relative_path))
+
+    # Copy the directory from local filesystem to modal volume
+    copy_dir(source_mocal=mocal_for_local, source_dir_full_path=temp_dir_local, \
+              destination_mocal=mocal_for_volume_one, destination_full_path=temp_dir_volume_one)
+    
+    # Make sure the expected files all exist
+    for file_relative_path in expected_files_relative_path:
+        assert mocal_for_volume_one.file_or_dir_exists(os.path.join(temp_dir_volume_one, file_relative_path))
+    
+    # Remove the temporary dirs and verify they are gone
+    mocal_for_volume_one.remove_file_or_directory(temp_dir_volume_one)
+    mocal_for_local.remove_file_or_directory(temp_dir_local)
+    assert not mocal_for_volume_one.file_or_dir_exists(temp_dir_volume_one)
+    assert not mocal_for_local.file_or_dir_exists(temp_dir_local)
+    print("Running test_copy_dir_from_local_to_volume", "locally" if modal.is_local() else "remotely", "finished")
+
 
 @app.local_entrypoint()
 def main():  
-    test_copy_local_file_to_volume.local()
+    '''test_copy_local_file_to_volume.local()
     test_copy_file_from_volume_to_volume.local()
     test_copy_file_from_volume_to_volume.remote()
-    test_copy_file_from_volume_to_local.local()
+    test_copy_file_from_volume_to_local.local()'''
+    test_copy_dir_from_local_to_volume.local()
     
 
 
