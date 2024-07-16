@@ -54,9 +54,14 @@ def copy_dir(source_mocal: ModalOrLocal, source_dir_full_path : str, destination
               if not destination_mocal.isdir(dir_destination_full_path): destination_mocal.create_directory(dir_destination_full_path)
 
 
-def copy(source_mocal: ModalOrLocal, source_path, destination_mocal: ModalOrLocal, target_path):
-    '''Copy the source_path on the source_mocal to the target_path on the target mocal'''
-    pass
+def copy(source_mocal: ModalOrLocal, source_path, destination_mocal: ModalOrLocal, destination_path):
+    '''Copy the source_path on the source volume or filesystem to the target_path on the destination volume or filesystem'''
+    if source_mocal.isfile(source_path):
+         copy_file(source_mocal, source_path, destination_mocal, destination_path)
+    elif source_mocal.isdir(source_path):
+         copy_dir(source_mocal, source_path, destination_mocal, destination_path)
+    else:
+         raise RuntimeError(f"Could not locate path {source_path=} in {source_mocal=}")
 
 def path_is_dir(mocal: ModalOrLocal, full_path : str) -> bool:
      '''Return true if the given full_path is a directory on the given mocal or is expected to be (ends with /)'''
