@@ -51,7 +51,7 @@ def copy_dir(source_mocal: ModalOrLocal, source_dir_full_path : str, destination
     
     #print(f"copy_dir: {destination_full_path=}, {resolved_destination_full_path=}")
     for path, dirs, files in source_mocal.walk(source_dir_full_path):
-         print ("copy_dir got entry:", path, dirs, files)
+         #print ("copy_dir got entry:", path, dirs, files)
          for file in files:
               file_source_full_path = os.path.join(path, file)
               file_relative_path = file_source_full_path.replace(source_dir_full_path, "").replace("/", "", 1)
