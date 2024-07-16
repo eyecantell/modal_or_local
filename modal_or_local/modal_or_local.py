@@ -193,7 +193,7 @@ class ModalOrLocal:
     
     import os
 
-    def walk(self, dir_full_path: str = None) -> Generator[Tuple[str, list[str], list[str]], None, None]:
+    def walk(self, dir_full_path: str) -> Generator[Tuple[str, list[str], list[str]], None, None]:
         """
         Return a generator of (dirpath, dirs, files) tuples similar to os.walk(). Uses os.walk() if not using a volume and running locally.
         Note dirpath will include the volume_mount_dir if applicable.
@@ -218,7 +218,7 @@ class ModalOrLocal:
                 else:
                     filenames.append(os.path.basename(entry.path))
 
-            print("yielding", (os.path.join(self.volume_mount_dir, dirpath), dirnames, filenames))
+            #print("yielding", (os.path.join(self.volume_mount_dir, dirpath), dirnames, filenames))
             yield (os.path.join(self.volume_mount_dir, dirpath), dirnames, filenames)
 
             # Walk the other directories found

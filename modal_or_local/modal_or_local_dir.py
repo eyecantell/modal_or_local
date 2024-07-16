@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Generator, Tuple
 
 import logging
 from datetime import datetime
@@ -73,6 +73,17 @@ class ModalOrLocalDir:
     def get_FileEntry(self, filename: str) -> float:
         '''Return a modal.volume.FileEntry for the given path (relative to our directory) if it exists.'''
         return self.modal_or_local.get_FileEntry(full_path=self.get_full_path(filename))
+    
+    def walk(self) -> Generator[Tuple[str, list[str], list[str]], None, None]:
+        """
+        Return a generator of (dirpath, dirs, files) tuples similar to os.walk(). Uses os.walk() if not using a volume and running locally.
+        Note dirpath will include the volume_mount_dir if applicable.
+
+        Yields:
+            Tuple[str, list[str], list[str]]: A tuple containing the current directory path,
+            a list of subdirectory names, and a list of filenames.
+        """
+        yield self.modal_or_local.walk(dir_full_path=self.dir_full_path)
 
     def report_changes(self, since_datetime : Optional[datetime] = None) -> Dict:
         '''Return files/dirs that have changed in this directory since the given datetime (inclusive)
@@ -114,6 +125,19 @@ class ModalOrLocalDir:
 
         return report
     
-    def copy_changes_from(self, mocal_dir : 'ModalOrLocalDir', since_date: datetime):
-        '''Copy files/dirs that have changed since the given date and are newer than what is currently in this directory'''
-        pass
+    def copy_changes_from(self, source_mdir : 'ModalOrLocalDir', since_date: datetime=None):
+        '''Copy files/dirs that have changed since the given date (if specified) and are newer than what is currently in this directory'''
+
+        changes = source_mdir.report_changes(since_date)
+
+        files_to_copy = []
+        for file in changes.get("new_or_modified_files"):
+            # See if this file exists already
+            existing_mtime = self.get_mtime(file)
+            source_mtime = source_mdir.get_mtime(file)
+
+            if existing_mtime is None or existing_mtime < source_mtime:
+                print(f"Will copy {file}")
+            else:
+                print(f"Will skip {file} since it is not newer")
+        
