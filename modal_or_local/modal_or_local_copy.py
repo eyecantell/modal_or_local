@@ -32,24 +32,37 @@ def copy_file(source_mocal: ModalOrLocal, source_file_full_path : str, destinati
 
         
 def copy_dir(source_mocal: ModalOrLocal, source_dir_full_path : str, destination_mocal: ModalOrLocal, destination_full_path : str):
-    '''Copy the given directory (and its contents) from the source_mocal to the destination_full_path on the destination_mocal.'''
+    '''Copy the given directory (and its contents) from the source_mocal source_dir_full_path to the destination_full_path on the destination_mocal.
+    If the destination directory already exists, a copy of the source directory will be placed inside of it.
+    If the destination directory does not exist, a copy of the source directory will be created as the destination directory'''
+    
+    # Make sure the source path exists and is a directory
     if not source_mocal.isdir(source_dir_full_path): 
         raise RuntimeError(f"Could not locate dir {source_dir_full_path=} in {source_mocal=}")
     
-    print(f"copy_dir: {destination_full_path=}")
+    # If the source dir had a slash at the end remove it
+    if source_dir_full_path.strip().endswith('/'): source_dir_full_path = source_dir_full_path.strip()[:-1]
+
+    # See if the destination directory already exists. If so a copy of the source directory will be placed inside of it
+    resolved_destination_full_path = destination_full_path
+    if destination_mocal.isdir(destination_full_path):
+         resolved_destination_full_path = os.path.join(destination_full_path, source_dir_full_path.split('/')[-1])
+         #print(f"Destination dir {destination_full_path} already exists so {resolved_destination_full_path=}")
+    
+    #print(f"copy_dir: {destination_full_path=}, {resolved_destination_full_path=}")
     for path, dirs, files in source_mocal.walk(source_dir_full_path):
          print ("copy_dir got entry:", path, dirs, files)
          for file in files:
               file_source_full_path = os.path.join(path, file)
               file_relative_path = file_source_full_path.replace(source_dir_full_path, "").replace("/", "", 1)
-              file_destination_full_path = os.path.join(destination_full_path, file_relative_path)
+              file_destination_full_path = os.path.join(resolved_destination_full_path, file_relative_path)
               #print(f"Copying {file_source_full_path=} to {file_destination_full_path=}, {file_relative_path=}")
               copy_file(source_mocal, file_source_full_path, destination_mocal, file_destination_full_path)
          for dir in dirs:
-              print(f"Making sure {dir=} exists")
+              #print(f"Making sure {dir=} exists")
               dir_source_full_path = os.path.join(path, dir)
               dir_relative_path = dir_source_full_path.replace(source_dir_full_path, "").replace("/", "", 1)
-              dir_destination_full_path = os.path.join(destination_full_path, dir_relative_path)
+              dir_destination_full_path = os.path.join(resolved_destination_full_path, dir_relative_path)
               #print(f"Making sure {dir_relative_path=} exists at {dir_destination_full_path=}, {dir_relative_path=}")
               if not destination_mocal.isdir(dir_destination_full_path): destination_mocal.create_directory(dir_destination_full_path)
 
