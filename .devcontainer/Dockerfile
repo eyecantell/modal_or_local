@@ -11,8 +11,9 @@ RUN pip install --upgrade pip
 RUN apt-get -y update
 RUN apt-get -y install git
 
-# Install curl
+# Install curl and tree
 RUN apt-get -y install curl
+RUN apt-get -y install tree
 
 # Add .local/bin to PATH
 ENV PATH=/home/developer/.local/bin:$PATH
