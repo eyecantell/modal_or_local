@@ -129,11 +129,13 @@ class ModalOrLocalDir:
 
         return report
     
-    def copy_changes_from(self, source_mdir : 'ModalOrLocalDir', since_date: datetime=None):
-        '''Copy files/dirs that have changed since the given date (if specified) and are newer than what is currently in this directory'''
+    def copy_changes_from(self, source_mdir : 'ModalOrLocalDir', since_date: datetime=None) -> List[str]:
+        '''Copy files/dirs that have changed since the given date (if specified) and are newer than what is currently in this directory.
+        Returns list of the relative paths of the files that were copied'''
 
         changes = source_mdir.report_changes(since_date)
 
+        copied_files = []
         for file_full_path in changes.get("new_or_modified_files"):
             # See if this file exists already in the destination
             file_relative_path = str(file_full_path).replace(source_mdir.dir_full_path + "/", "")
@@ -141,11 +143,14 @@ class ModalOrLocalDir:
             source_mtime = source_mdir.get_mtime(file_relative_path)
 
             if existing_mtime is None or existing_mtime < source_mtime:
-                print(f"Will copy {file_relative_path}, {existing_mtime=} {source_mtime=} diff of {source_mtime-existing_mtime if existing_mtime else 'n/a'}")
+                #print(f"Will copy {file_relative_path}, {existing_mtime=} {source_mtime=} diff of {source_mtime-existing_mtime if existing_mtime else 'n/a'}")
                 self.copy_file(source_mdir=source_mdir, source_file_relative_path=file_relative_path, destination_relative_path=file_relative_path)
+                copied_files.append(file_relative_path)
                 
-            else:
-                print(f"Will skip {file_relative_path} since it is not newer")
+            #else:
+                #print(f"Will skip {file_relative_path} since it is not newer: {existing_mtime=} {source_mtime=} diff of {source_mtime-existing_mtime if existing_mtime else 'n/a'}")
+
+        return copied_files
 
 
     def copy_file(self, source_mdir : 'ModalOrLocalDir', source_file_relative_path : str, destination_relative_path : str):
