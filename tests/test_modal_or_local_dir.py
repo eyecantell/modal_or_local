@@ -3,7 +3,7 @@ import json
 import os
 from datetime import datetime
 from typing import Set
-from time import sleep
+from time import sleep, time
 from modal_or_local import setup_image, ModalOrLocal, ModalOrLocalDir
 
 # Call this with 'modal run tests/test_modal_or_local_dir.py'
@@ -189,9 +189,12 @@ def test_copy_changes_from():
     print("Copying files a.json, b.json, aa.json, bb.json from volume to local")
     mdir_local.copy_changes_from(mdir_on_volume)
     
-    # Make sure the expected files got copied to the local directory
+    # Make sure the expected files got copied to the local directory and change their mtimes to older to get around time difference between local and modal
+    now_in_seconds = time()
     for file_relative_path in expected_files_relative_path:
         assert mdir_local.file_or_dir_exists(file_relative_path)
+        # Push the mtime back 100s to make sure its "older" than what is on the volume
+        os.utime(os.path.join(mdir_local.dir_full_path, file_relative_path), (now_in_seconds-100, now_in_seconds-100))
 
     # Add a file in each directory locally then update the modal volume with them
     # test_copy_changes_from/
@@ -230,7 +233,6 @@ def test_copy_changes_from():
     b_json_mtime_initial_on_volume = mdir_on_volume.get_mtime("b.json")
     b_json_mtime_initial_local = mdir_local.get_mtime("b.json")
 
-    from time import time
     if time() <= b_json_mtime_initial_on_volume:
         sleep(.01)
     if time() <= b_json_mtime_initial_on_volume:
@@ -252,6 +254,7 @@ def test_copy_changes_from():
     mdir_on_volume.remove_file_or_directory(mdir_on_volume.dir_full_path)
 
     print("Running test_copy_changes_from", "locally" if modal.is_local() else "remotely", "finished")
+
 
 @app.local_entrypoint()
 def main():  
