@@ -158,7 +158,7 @@ def test_copy_changes_from():
     mdir_local.remove_file_or_directory(mdir_local.dir_full_path, dne_ok=True)
     mdir_on_volume.remove_file_or_directory(mdir_on_volume.dir_full_path, dne_ok=True)
 
-    # Create some files on the volume
+    # Create some files on the volume:
     # test_copy_changes_from/
     #    ├── a.json
     #    ├── b.json
@@ -193,8 +193,6 @@ def test_copy_changes_from():
     now_in_seconds = time()
     for file_relative_path in expected_files_relative_path:
         assert mdir_local.file_or_dir_exists(file_relative_path)
-        # Push the mtime back 100s to make sure its "older" than what is on the volume
-        os.utime(os.path.join(mdir_local.dir_full_path, file_relative_path), (now_in_seconds-100, now_in_seconds-100))
 
     # Add a file in each directory locally then update the modal volume with them
     # test_copy_changes_from/
@@ -206,20 +204,33 @@ def test_copy_changes_from():
     #        ├── bb.json
     #        ├── cc.json *new
 
+    # Grab the mtimes of the existing files - we will use this to make sure they dont change
+    backed_up_mtime = int(now_in_seconds-100)
+    for file_relative_path in expected_files_relative_path:
+        # Push the mtime back 100s to make sure its "older" than what is on the volume
+        os.utime(os.path.join(mdir_local.dir_full_path, file_relative_path), (backed_up_mtime, backed_up_mtime))
+        assert mdir_local.get_mtime(file_relative_path) == backed_up_mtime, f"Did not set backed_up_time on {file_relative_path} {backed_up_mtime=} {mdir_local.get_mtime(file_relative_path)=}"
+        print(f"Set mtime for {file_relative_path} to {backed_up_mtime}")
+
     print("Adding c.json locally")
     mdir_local.write_json_file("c.json", {"c":"c_val"})
     expected_files_relative_path.append("c.json")
     mdir_local.write_json_file("subdir/cc.json", {"cc":"cc_val"})
     expected_files_relative_path.append("subdir/cc.json")
 
-    print("Copying files from local to volume")
-    mdir_on_volume.copy_changes_from(mdir_local)
+    print("Copying new files (c.json, cc.json) from local to volume") 
+    copied_files = mdir_on_volume.copy_changes_from(mdir_local)
     
     # Make sure the expected files got copied to the local directory
     for file_relative_path in expected_files_relative_path:
         assert mdir_on_volume.file_or_dir_exists(file_relative_path)
 
-    # Remove one of the files (a.json) from the volume, and make sure it does not get copied over
+    # Make sure none of the other files changed
+    for file_relative_path in expected_files_relative_path:
+        if str(file_relative_path).endswith("c.json"): continue # skip c.json and cc.json since they changed
+        assert file_relative_path not in copied_files
+
+    # Remove one of the files (a.json) from the volume, and make sure it does not get copied over from local again
     print("Removing a.json from volume")
     mtime = mdir_local.get_mtime("subdir/cc.json")
     mdir_on_volume.remove_file_or_directory("a.json")
