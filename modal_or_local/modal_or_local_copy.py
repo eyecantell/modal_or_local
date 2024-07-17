@@ -11,7 +11,8 @@ This is currently pretty rudimentary. Future improvements can include chunking a
 '''
 
 def copy_file(source_mocal: ModalOrLocal, source_file_full_path : str, destination_mocal: ModalOrLocal, destination_full_path : str):
-        '''Copy the given file from the source_mocal to the destination_full_path on the destination_mocal. The destination_full_path can point to a file or a directory.'''
+        '''Copy the given file from the source_mocal to the destination_full_path on the destination_mocal. 
+        The destination_full_path can point to a file (will become the new name) or a directory.'''
         
         if not source_mocal.isfile(source_file_full_path): 
              raise RuntimeError(f"Could not locate {source_file_full_path=} in {source_mocal=}")
