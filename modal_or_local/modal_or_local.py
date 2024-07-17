@@ -114,11 +114,12 @@ class ModalOrLocal:
                 file_contents = f.read()
         return file_contents
 
-    def remove_file_or_directory(self, file_or_dir_to_remove_full_path: str):
+    def remove_file_or_directory(self, file_or_dir_to_remove_full_path: str, dne_ok : bool = False):
         '''Remove the given full path from the filesystem or modal volume'''
 
         if not self.file_or_dir_exists(file_or_dir_to_remove_full_path):
-            raise RuntimeError(f"Cannot remove file that does not exist: '{file_or_dir_to_remove_full_path}'")
+            if not dne_ok: raise RuntimeError(f"Cannot remove file that does not exist: '{file_or_dir_to_remove_full_path}'")
+            return
         
         # Remove the given file or directory
         if modal.is_local() and self.volume:
@@ -345,4 +346,23 @@ class ModalOrLocal:
         if fe.type == FileEntryType.FILE: return True
         return False
 
+    def get_time_delta(self, mocal : 'ModalOrLocal') -> float:
+        '''Get the approximate time difference in seconds between the machines behind self and the passed ModalOrLocal'''
 
+        # Modal does not make time since epoch availble, and only gives mtime for files in seconds
+        # We will create a file on both and compare mtimes to get approximate time difference
+        number_of_times_to_average = 5
+        total = 0
+        for i in range(number_of_times_to_average):
+            my_file    = os.path.normpath(os.path.join(self.volume_mount_dir  if self.volume_mount_dir  else "/tmp", "get_time_delta.json"))
+            mocal_file = os.path.normpath(os.path.join(mocal.volume_mount_dir if mocal.volume_mount_dir else "/tmp", "get_time_delta.json"))
+            self.write_json_file(my_file, {"a":1})
+            mocal.write_json_file(mocal_file, {"a":1})
+
+            delta_time = self.get_mtime(my_file) - mocal.get_mtime(mocal_file)
+            total += delta_time
+
+        self.remove_file_or_directory(my_file)
+        mocal.remove_file_or_directory(mocal_file)
+        return total / number_of_times_to_average
+                             
