@@ -154,10 +154,22 @@ def test_copy_changes_from():
     mdir_on_volume = ModalOrLocalDir(dir_full_path=os.path.join(mocal.volume_mount_dir,"test_copy_changes_from"), modal_or_local=mocal)
     mdir_local = ModalOrLocalDir(dir_full_path="/tmp/test_copy_changes_from")
 
+    # Make sure the temp directories do not exist yet
+    mdir_local.remove_file_or_directory(mdir_local.dir_full_path, dne_ok=True)
+    mdir_on_volume.remove_file_or_directory(mdir_on_volume.dir_full_path, dne_ok=True)
+
     # Create some files on the volume
+    # test_copy_changes_from/
+    #    ├── a.json
+    #    ├── b.json
+    #    └── subdir
+    #        ├── aa.json
+    #        ├── bb.json
+
     expected_files_relative_path = []
      # Create a.json, b.json, c.json in /test_mnt_dir/test_copy_changes_from
-    for prefix in ["a", "b", "c"]:
+    print("Creating files a.json, b.json, aa.json, bb.json locally")
+    for prefix in ["a", "b"]:
         test_json_data = json.loads('{"' + prefix + '": "' + prefix + '_val"}') # e,g. {"a":"a_val"}
         test_file_on_volume_one = prefix + ".json"
         mdir_on_volume.write_json_file(test_file_on_volume_one, test_json_data) 
@@ -165,21 +177,80 @@ def test_copy_changes_from():
         expected_files_relative_path.append(test_file_on_volume_one)
 
     # Create aa.json, bb.json, cc.json in /test_mnt_dir_one/test_copy_file_from_volume_to_local_dir/subdir
-    for prefix in ["aa", "bb", "cc"]:
+    for prefix in ["aa", "bb"]:
         test_json_data = json.loads('{"' + prefix + '": "' + prefix + '_val"}') # e,g. {"aa":"aa_val"}
         test_file_on_volume_one = os.path.join("subdir", prefix + ".json")
         mdir_on_volume.write_json_file(test_file_on_volume_one, test_json_data) 
         assert mdir_on_volume.file_or_dir_exists(test_file_on_volume_one), f"Could not find file created on volume one {test_file_on_volume_one=}"
         expected_files_relative_path.append(test_file_on_volume_one)
 
-    print("Expected files are\n", "\n".join(expected_files_relative_path))
+    #print("Expected files are\n", "\n".join(expected_files_relative_path))
 
+    print("Copying files a.json, b.json, aa.json, bb.json from volume to local")
     mdir_local.copy_changes_from(mdir_on_volume)
     
     # Make sure the expected files got copied to the local directory
     for file_relative_path in expected_files_relative_path:
         assert mdir_local.file_or_dir_exists(file_relative_path)
-        
+
+    # Add a file in each directory locally then update the modal volume with them
+    # test_copy_changes_from/
+    #    ├── a.json
+    #    ├── b.json
+    #    ├── c.json *new
+    #    └── subdir
+    #        ├── aa.json
+    #        ├── bb.json
+    #        ├── cc.json *new
+
+    print("Adding c.json locally")
+    mdir_local.write_json_file("c.json", {"c":"c_val"})
+    expected_files_relative_path.append("c.json")
+    mdir_local.write_json_file("subdir/cc.json", {"cc":"cc_val"})
+    expected_files_relative_path.append("subdir/cc.json")
+
+    print("Copying files from local to volume")
+    mdir_on_volume.copy_changes_from(mdir_local)
+    
+    # Make sure the expected files got copied to the local directory
+    for file_relative_path in expected_files_relative_path:
+        assert mdir_on_volume.file_or_dir_exists(file_relative_path)
+
+    # Remove one of the files (a.json) from the volume, and make sure it does not get copied over
+    print("Removing a.json from volume")
+    mtime = mdir_local.get_mtime("subdir/cc.json")
+    mdir_on_volume.remove_file_or_directory("a.json")
+    assert not mdir_on_volume.file_or_dir_exists("a.json")
+
+    mdir_on_volume.copy_changes_from(mdir_local, datetime.fromtimestamp(mtime))
+    assert not mdir_on_volume.file_or_dir_exists("a.json")
+
+    # Change the mtime of one of the files locally (b.json) and make sure it shows up as changed and gets copied
+    print("Changing the mtime of b.json")
+    b_json_mtime_initial_on_volume = mdir_on_volume.get_mtime("b.json")
+    b_json_mtime_initial_local = mdir_local.get_mtime("b.json")
+
+    from time import time
+    if time() <= b_json_mtime_initial_on_volume:
+        sleep(.01)
+    if time() <= b_json_mtime_initial_on_volume:
+        print(f"{b_json_mtime_initial_on_volume=} {time()=}")
+        raise RuntimeError("need to fix time mismatch between volume and local machine")
+
+    # Update the mtime on the local b.json to now and verify it got set
+    now_in_seconds = time()
+    os.utime(os.path.join(mdir_local.dir_full_path, "b.json"), (b_json_mtime_initial_local, now_in_seconds))
+    assert mdir_local.get_mtime('b.json') == now_in_seconds, f"Expected mtime for b.json to be set to {now_in_seconds} but got {mdir_local.get_mtime('b.json')}"
+    #print(f"{b_json_mtime_initial_local=}, {mdir_local.get_mtime('b.json')=}")
+
+    # Perform the copy and make sure the b.json on the volume gets updated
+    mdir_on_volume.copy_changes_from(mdir_local, datetime.fromtimestamp(mtime))
+    assert mdir_on_volume.get_mtime("b.json") > b_json_mtime_initial_on_volume, f"Expected mtime for b.json to be greater than {b_json_mtime_initial_on_volume=} but got {mdir_local.get_mtime('b.json')}"
+   
+    # remove the temp directories
+    mdir_local.remove_file_or_directory(mdir_local.dir_full_path)
+    mdir_on_volume.remove_file_or_directory(mdir_on_volume.dir_full_path)
+
     print("Running test_copy_changes_from", "locally" if modal.is_local() else "remotely", "finished")
 
 @app.local_entrypoint()
