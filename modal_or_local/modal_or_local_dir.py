@@ -74,6 +74,10 @@ class ModalOrLocalDir:
         '''Return a modal.volume.FileEntry for the given path (relative to our directory) if it exists.'''
         return self.modal_or_local.get_FileEntry(full_path=self.get_full_path(filename))
     
+    def remove_file_or_directory(self, relative_path: str, dne_ok : bool = False) -> float:
+        '''Remove the given relative path (file or directory) from the filesystem or modal volume'''
+        return self.modal_or_local.remove_file_or_directory(file_or_dir_to_remove_full_path=self.get_full_path(relative_path), dne_ok=dne_ok)
+    
     def walk(self) -> Generator[Tuple[str, list[str], list[str]], None, None]:
         """
         Return a generator of (dirpath, dirs, files) tuples similar to os.walk(). Uses os.walk() if not using a volume and running locally.
@@ -130,14 +134,30 @@ class ModalOrLocalDir:
 
         changes = source_mdir.report_changes(since_date)
 
-        files_to_copy = []
-        for file in changes.get("new_or_modified_files"):
-            # See if this file exists already
-            existing_mtime = self.get_mtime(file)
-            source_mtime = source_mdir.get_mtime(file)
+        for file_full_path in changes.get("new_or_modified_files"):
+            # See if this file exists already in the destination
+            file_relative_path = str(file_full_path).replace(source_mdir.dir_full_path + "/", "")
+            existing_mtime = self.get_mtime(file_relative_path)
+            source_mtime = source_mdir.get_mtime(file_relative_path)
 
             if existing_mtime is None or existing_mtime < source_mtime:
-                print(f"Will copy {file}")
+                print(f"Will copy {file_relative_path}, {existing_mtime=} {source_mtime=} diff of {source_mtime-existing_mtime if existing_mtime else 'n/a'}")
+                self.copy_file(source_mdir=source_mdir, source_file_relative_path=file_relative_path, destination_relative_path=file_relative_path)
+                
             else:
-                print(f"Will skip {file} since it is not newer")
+                print(f"Will skip {file_relative_path} since it is not newer")
+
+
+    def copy_file(self, source_mdir : 'ModalOrLocalDir', source_file_relative_path : str, destination_relative_path : str):
+        '''Copy a file from source_mdir/source_file_relative_path to the destination path in this directory.
+        If destination_relative_path is an existing directory or ends with '/' the file will be of the same name and placed in that directory.
+        Otherwise the file will be named according to the basename of destination_relative_path.
+        '''
+        from modal_or_local.modal_or_local_copy import copy_file
+        copy_file(source_mocal=source_mdir.modal_or_local, source_file_full_path=source_mdir.get_full_path(source_file_relative_path), \
+                  destination_mocal=self.modal_or_local, destination_full_path=self.get_full_path(destination_relative_path))
+        
+
+        
+
         
