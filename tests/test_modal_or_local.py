@@ -205,16 +205,19 @@ def test_get_mtime():
 
     # Get the mtime from the new json file and compare to now
 
-
-
-
+@app.function(image=image, volumes={MODAL_VOLUME_MOUNT_DIR: mocal.volume})
+def test_get_time_delta():
+    mocal_for_local = ModalOrLocal()
+    time_delta = mocal_for_local.get_time_delta(mocal=mocal)
+    time_delta_reverse = mocal.get_time_delta(mocal=mocal_for_local)
+    print(f"{time_delta=} {time_delta_reverse=}")
 
 
 @app.local_entrypoint()
 def main():
     print("Running", __file__, "locally" if modal.is_local() else "remotely")
     
-    test_write_and_read_volume_json_file.local()
+    '''test_write_and_read_volume_json_file.local()
     test_write_and_read_volume_json_file.remote()
     test_create_or_remove_dir.local()
     test_create_or_remove_dir.remote()
@@ -227,6 +230,7 @@ def main():
     test_get_FileEntry.local()
     test_get_FileEntry.remote()
     test_get_mtime.local()
-    test_get_mtime.remote()
+    test_get_mtime.remote()'''
+    test_get_time_delta.local()
 
     
