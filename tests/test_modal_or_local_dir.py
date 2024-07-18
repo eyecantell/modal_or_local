@@ -144,7 +144,7 @@ def test_report_changes():
 
 @app.function(image=image, volumes={mocal.volume_mount_dir: mocal.volume}) 
 def test_copy_changes_from():
-    '''Create directories locally and on a volume. Copy changes from volume to local. Tests ModalOrLocalDir.copy_changes_from()'''
+    '''Create directories locally and on a volume. Copy changes from volume to local. Tests ModalOrLocalDir.copy_changed_files_from()'''
 
     print("Running test_copy_changes_from", "locally" if modal.is_local() else "remotely", "started")
 
@@ -187,7 +187,7 @@ def test_copy_changes_from():
     #print("Expected files are\n", "\n".join(expected_files_relative_path))
 
     print("Copying files a.json, b.json, aa.json, bb.json from volume to local")
-    mdir_local.copy_changes_from(mdir_on_volume)
+    mdir_local.copy_changed_files_from(mdir_on_volume)
     
     # Make sure the expected files got copied to the local directory and change their mtimes to older to get around time difference between local and modal
     now_in_seconds = time()
@@ -204,13 +204,13 @@ def test_copy_changes_from():
     #        ├── bb.json
     #        ├── cc.json *new
 
-    # Grab the mtimes of the existing files - we will use this to make sure they dont change
+    # Set back the mtimes of the existing files - this should cover any tiem discrpeancies between the modal servers and our machine
     backed_up_mtime = int(now_in_seconds-100)
     for file_relative_path in expected_files_relative_path:
         # Push the mtime back 100s to make sure its "older" than what is on the volume
         os.utime(os.path.join(mdir_local.dir_full_path, file_relative_path), (backed_up_mtime, backed_up_mtime))
         assert mdir_local.get_mtime(file_relative_path) == backed_up_mtime, f"Did not set backed_up_time on {file_relative_path} {backed_up_mtime=} {mdir_local.get_mtime(file_relative_path)=}"
-        print(f"Set mtime for {file_relative_path} to {backed_up_mtime}")
+        #print(f"Set mtime for {file_relative_path} to {backed_up_mtime}")
 
     print("Adding c.json locally")
     mdir_local.write_json_file("c.json", {"c":"c_val"})
@@ -219,7 +219,7 @@ def test_copy_changes_from():
     expected_files_relative_path.append("subdir/cc.json")
 
     print("Copying new files (c.json, cc.json) from local to volume") 
-    copied_files = mdir_on_volume.copy_changes_from(mdir_local)
+    copied_files = mdir_on_volume.copy_changed_files_from(mdir_local)
     
     # Make sure the expected files got copied to the local directory
     for file_relative_path in expected_files_relative_path:
@@ -236,10 +236,11 @@ def test_copy_changes_from():
     mdir_on_volume.remove_file_or_directory("a.json")
     assert not mdir_on_volume.file_or_dir_exists("a.json")
 
-    mdir_on_volume.copy_changes_from(mdir_local, datetime.fromtimestamp(mtime))
+    mdir_on_volume.copy_changed_files_from(mdir_local, datetime.fromtimestamp(mtime))
     assert not mdir_on_volume.file_or_dir_exists("a.json")
 
     # Change the mtime of one of the files locally (b.json) and make sure it shows up as changed and gets copied
+    # PRW todo - this is brittle
     print("Changing the mtime of b.json")
     b_json_mtime_initial_on_volume = mdir_on_volume.get_mtime("b.json")
     b_json_mtime_initial_local = mdir_local.get_mtime("b.json")
@@ -257,7 +258,7 @@ def test_copy_changes_from():
     #print(f"{b_json_mtime_initial_local=}, {mdir_local.get_mtime('b.json')=}")
 
     # Perform the copy and make sure the b.json on the volume gets updated
-    mdir_on_volume.copy_changes_from(mdir_local, datetime.fromtimestamp(mtime))
+    mdir_on_volume.copy_changed_files_from(mdir_local, datetime.fromtimestamp(mtime))
     assert mdir_on_volume.get_mtime("b.json") > b_json_mtime_initial_on_volume, f"Expected mtime for b.json to be greater than {b_json_mtime_initial_on_volume=} but got {mdir_local.get_mtime('b.json')}"
    
     # remove the temp directories
@@ -269,8 +270,6 @@ def test_copy_changes_from():
 
 @app.local_entrypoint()
 def main():  
-    '''test_report_changes.local()
-    test_report_changes.remote()'''
+    test_report_changes.local()
+    test_report_changes.remote()
     test_copy_changes_from.local()
-
-    
