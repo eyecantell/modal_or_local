@@ -7,7 +7,7 @@ with open('requirements.txt') as f:
 setup(
     name='modal_or_local',
     version='0.1.0',
-    description='File and directory utilities for working with modal volumes or the local filesystem',
+    description='Utilities for working with files and directories in modal volumes or the local filesystem',
     author='Paul Wessling',
     author_email='paul@nowfree.org',
     url='https://github.com/eyecantell/modal_or_local',
