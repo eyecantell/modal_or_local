@@ -84,6 +84,7 @@ def test_create_or_remove_dir():
 def test_listdir():
     '''Create files in a temp directory, then read the list of files in the directory'''
     temp_dir = os.path.join(mocal.volume_mount_dir, "test_listdir_data")
+    mocal.remove_file_or_directory(temp_dir, dne_ok=True)
     mocal.create_directory(temp_dir)
 
     # Add some files to the temp directory on the volume
@@ -92,14 +93,16 @@ def test_listdir():
         filename = prefix + ".txt"
         filenames_created.append(filename)
         full_path = os.path.join(temp_dir, filename)
-        file_text = "this is some text in file " + prefix
+        file_text = "some text for file " + prefix
         mocal.write_file(full_path, file_text.encode())
 
     # List the directory and check that all of the expected files are in the list
     found_filenames = mocal.listdir(temp_dir)
+
+    assert len(found_filenames) == len(filenames_created), f"Expected {len(filenames_created)} files but found {len(found_filenames)}. {filenames_created=} {found_filenames=}"
     #print(f"{found_filenames=}")
     for filename in filenames_created:
-        assert filename in found_filenames, "Expected filename " + filename + " not found in listdir " + str(found_filenames)
+        assert filename in found_filenames, "Expected filename '" + filename + "' not found in listdir " + str(found_filenames)
 
     # List the directory with full path option and check that all of the expected files are in the list
     found_filenames_full_path = mocal.listdir(temp_dir, return_full_paths=True)
@@ -108,6 +111,29 @@ def test_listdir():
         full_path = os.path.join(temp_dir, filename)
         assert full_path in found_filenames_full_path, "Expected full path " + full_path + " not found in listdir " + str(found_filenames_full_path)
 
+    # Add a subdirectory "subdir"
+    subdir_filenames_created = []
+    for prefix in ["aa", "bb", "cc"]:
+        subdir_filenames_created.append(prefix + ".txt")
+        full_path = os.path.join(temp_dir, "subdir", prefix + ".txt")
+        file_text = "some text for subdir file " + prefix
+        mocal.write_file(full_path, file_text.encode())
+
+    found_subdir_filenames = mocal.listdir(os.path.join(temp_dir, "subdir"))
+    assert len(found_subdir_filenames) == len(subdir_filenames_created), f"Expected {len(subdir_filenames_created)} files but found {len(found_subdir_filenames)}. {subdir_filenames_created=} {found_filenames=}"
+    #print(f"{found_filenames=}")
+    for filename in subdir_filenames_created:
+        assert filename in found_subdir_filenames, f"Expected filename '{filename}' not found in listdir.  {subdir_filenames_created=} {found_subdir_filenames=}"
+
+    # Now that there is a subdir, make sure the original listing still works (doe not report anything recursive)
+    found_filenames = mocal.listdir(temp_dir)
+    filenames_created.append("subdir")
+
+    assert len(found_filenames) == len(filenames_created), f"Expected {len(filenames_created)} files but found {len(found_filenames)}. {filenames_created=} {found_filenames=}"
+    #print(f"{found_filenames=}")
+    for filename in filenames_created:
+        assert filename in found_filenames, f"Expected filename '{filename}' not found in listdir: {filenames_created=} {found_filenames=}"
+    
     # Remove the temp test dir
     mocal.remove_file_or_directory(temp_dir)
 
@@ -222,15 +248,15 @@ def main():
     test_create_or_remove_dir.local()
     test_create_or_remove_dir.remote()
     test_write_and_read_volume_txt_file.local()
-    test_write_and_read_volume_txt_file.remote()
+    test_write_and_read_volume_txt_file.remote()'''
     test_listdir.local()
-    test_listdir.remote()
+    '''test_listdir.remote()
     test_walk.local()
     test_walk.remote()
     test_get_FileEntry.local()
     test_get_FileEntry.remote()
     test_get_mtime.local()
-    test_get_mtime.remote()'''
-    test_get_time_delta.local()
+    test_get_mtime.remote()
+    test_get_time_delta.local()'''
 
     

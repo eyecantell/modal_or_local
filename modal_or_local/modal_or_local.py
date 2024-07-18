@@ -172,12 +172,13 @@ class ModalOrLocal:
         return False
     
     def listdir(self, dir_full_path : str = None, return_full_paths: bool = False) -> List[str]:
-        '''Return a (non-recursive) list of files/directories in the given path on either the filesystem or a modal volume'''
+        '''Return a (non-recursive) list of files/directories in the given path on either the filesystem or a modal volume.
+        For recursive listings see walk().'''
         list_to_return = []
         if modal.is_local() and self.volume:
             # Remove the volume mount dir from the path if it was passed as part of the full path
             prepped_path = self.path_without_volume_mount_dir(dir_full_path, volume_mount_dir_required=True)
-            for f in self.volume.iterdir(prepped_path):
+            for f in self.volume.iterdir(prepped_path, recursive=False):
                 if return_full_paths:
                     list_to_return.append(str(os.path.normpath(os.path.join('/', self.volume_mount_dir, f.path))))
                 else:
@@ -229,11 +230,20 @@ class ModalOrLocal:
             # Get the list from the local filesystem
             yield from os.walk(dir_full_path)
 
-    def create_directory(self, dir_full_path : str):
+    def create_directory(self, dir_full_path : str, exists_ok : bool = True):
         '''Create a directory (and parent dirs as needed) on the local filesystem or on a volume'''
 
+        already_exists_as_dir = self.isdir(dir_full_path)
+
+        if already_exists_as_dir and exists_ok: 
+            return
+        elif already_exists_as_dir and not exists_ok:
+            raise RuntimeError(f"Directory {dir_full_path} already exists")
+        elif self.isfile(dir_full_path):
+            raise RuntimeError(f"Path {dir_full_path} already exists as a file")
+        
         if modal.is_local() and self.volume:
-            # Create the notice dir on the volume
+            # Create the dir on the volume
             # Remove the volume mount dir if it was passed as part of the full path
             prepped_path = self.path_without_volume_mount_dir(dir_full_path, volume_mount_dir_required=True)
 
