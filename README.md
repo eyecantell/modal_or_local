@@ -1,9 +1,9 @@
 # modal_or_local
 File and directory utilities for working with modal volumes. The modal_or_local package gives the ability to use the same code to control files and directories from either a local run or remote run.
 
-See scripts/example.py and tests/test_modal_or_local.py for code samples.
+See scripts/example.py and tests/ for code samples.
 
-This package is expected to work on any Linux type system and has been tested on WSL.  Working from Windows will have issues primarily becuase of the extensive use of os.path tools that are presumed to give Linux-style paths to work on Modal.
+This package is expected to work on any Linux type system and has been tested on WSL.  Working from Windows will have issues primarily because of the extensive use of os.path tools that are presumed to give Linux-style paths to work on Modal.
 
 ## Usage
 ```python
