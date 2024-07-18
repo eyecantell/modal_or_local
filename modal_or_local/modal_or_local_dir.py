@@ -54,13 +54,21 @@ class ModalOrLocalDir:
         '''Return a (non-recursive) list of files/directories in the given path'''
         self.modal_or_local.listdir(self.dir_full_path)
 
-    def write_json_file(self, json_filename: str, metadata : Any, force: bool = True):
+    def write_json_file(self, json_file_relative_path: str, metadata : Any, force: bool = True):
         '''Write a json file to the directory. This will overwrite existing and create any needed parent/sub directories automatically.'''
-        return self.modal_or_local.write_json_file(new_json_file_full_path=self.get_full_path(json_filename), metadata=metadata, force=force)
+        return self.modal_or_local.write_json_file(new_json_file_full_path=self.get_full_path(json_file_relative_path), metadata=metadata, force=force)
     
-    def read_json_file(self, json_filename: str) -> Any:
+    def read_json_file(self, json_file_relative_path: str) -> Any:
         '''Load json from the given file'''
-        return self.modal_or_local.read_json_file(json_file_full_path=self.get_full_path(json_filename))
+        return self.modal_or_local.read_json_file(json_file_full_path=self.get_full_path(json_file_relative_path))
+    
+    def write_file(self, new_file_relative_path: str, encoded_content : Any, force: bool = True):
+        '''Write the encoded content to a file in either the local filesystem or to a volume. This will create any needed parent directories automatically.'''
+        return self.modal_or_local.write_file(new_file_full_path=self.get_full_path(new_file_relative_path), encoded_content=encoded_content, force=force)
+    
+    def read_file(self, file_relative_path: str) -> Any:
+        '''Load content from the given file - works on filesystem or on volume'''
+        return self.modal_or_local.read_file(new_file_full_path=self.get_full_path(file_relative_path))
     
     def file_or_dir_exists(self, filename: str) -> bool:
         '''Returns true if the passed file or directory exists in our directory'''
@@ -129,7 +137,7 @@ class ModalOrLocalDir:
 
         return report
     
-    def copy_changes_from(self, source_mdir : 'ModalOrLocalDir', since_date: datetime=None) -> List[str]:
+    def copy_changed_files_from(self, source_mdir : 'ModalOrLocalDir', since_date: datetime=None) -> List[str]:
         '''Copy files/dirs that have changed since the given date (if specified) and are newer than what is currently in this directory.
         Returns list of the relative paths of the files that were copied'''
 
