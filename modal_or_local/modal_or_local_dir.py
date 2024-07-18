@@ -50,9 +50,17 @@ class ModalOrLocalDir:
     def __str__(self):
         return __class__.__name__ + f"(dir_full_path={self.dir_full_path}, modal_or_local={self.modal_or_local})"
     
-    def listdir(self)->List:
-        '''Return a (non-recursive) list of files/directories in the given path'''
-        self.modal_or_local.listdir(self.dir_full_path)
+    def listdir(self, relative_path: str = None, return_full_paths : bool = False)->List[str]:
+        '''Return a (non-recursive) list of files/directories in the given path. For recursive see walk()'''
+        
+        if relative_path:
+            if relative_path.startswith("/"):
+                raise RuntimeError(f"Expected relative path to be relative, but got absolute: {relative_path=}")
+            
+            return self.modal_or_local.listdir(os.path.join(self.dir_full_path, relative_path), return_full_paths=return_full_paths)
+        else:
+            return self.modal_or_local.listdir(self.dir_full_path, return_full_paths=return_full_paths)
+
 
     def write_json_file(self, json_file_relative_path: str, metadata : Any, force: bool = True):
         '''Write a json file to the directory. This will overwrite existing and create any needed parent/sub directories automatically.'''
