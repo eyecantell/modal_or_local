@@ -125,7 +125,7 @@ def test_listdir():
     for filename in subdir_filenames_created:
         assert filename in found_subdir_filenames, f"Expected filename '{filename}' not found in listdir.  {subdir_filenames_created=} {found_subdir_filenames=}"
 
-    # Now that there is a subdir, make sure the original listing still works (doe not report anything recursive)
+    # Now that there is a subdir, make sure the original listing still works (does not report anything recursive)
     found_filenames = mocal.listdir(temp_dir)
     filenames_created.append("subdir")
 
@@ -134,6 +134,9 @@ def test_listdir():
     for filename in filenames_created:
         assert filename in found_filenames, f"Expected filename '{filename}' not found in listdir: {filenames_created=} {found_filenames=}"
     
+    # Try listing just a file
+    file_full_path = os.path.join(temp_dir, "a.txt")
+    assert mocal.listdir(file_full_path) == ["a.txt"], f"Expected mocal.listdir({file_full_path}) to give ['a.txt'] but got {mocal.listdir(file_full_path)=}"
     # Remove the temp test dir
     mocal.remove_file_or_directory(temp_dir)
 
@@ -172,8 +175,8 @@ def test_walk():
     for tup in mocal.walk(temp_dir):
         walk_tuples.append(tup)
 
-    print(f"{expected_tuples=}")
-    print(f"{walk_tuples=}")
+    #print(f"{expected_tuples=}")
+    #print(f"{walk_tuples=}")
 
     assert walk_tuples_equal(walk_tuples, expected_tuples)
 
@@ -199,7 +202,7 @@ def test_get_FileEntry():
 
     for path in [mocal.volume_mount_dir, f"{mocal.volume_mount_dir}/test_get_FileEntry", f"{mocal.volume_mount_dir}/test_get_FileEntry", temp_dir, json_file_full_path]:
         entry = mocal.get_FileEntry(path)
-        print(f"mocal.get_FileEntry({path})=", mocal.get_FileEntry(path), "\n\n")
+        #print(f"mocal.get_FileEntry({path})=", mocal.get_FileEntry(path), "\n\n")
         
         # entry.path will not have a leading slash, so remove from path before testing equality
         if path != "/" and path.startswith('/'): path=path.replace("/","",1)
@@ -243,20 +246,20 @@ def test_get_time_delta():
 def main():
     print("Running", __file__, "locally" if modal.is_local() else "remotely")
     
-    '''test_write_and_read_volume_json_file.local()
+    test_write_and_read_volume_json_file.local()
     test_write_and_read_volume_json_file.remote()
     test_create_or_remove_dir.local()
     test_create_or_remove_dir.remote()
     test_write_and_read_volume_txt_file.local()
-    test_write_and_read_volume_txt_file.remote()'''
+    test_write_and_read_volume_txt_file.remote()
     test_listdir.local()
-    '''test_listdir.remote()
+    test_listdir.remote()
     test_walk.local()
     test_walk.remote()
     test_get_FileEntry.local()
     test_get_FileEntry.remote()
     test_get_mtime.local()
     test_get_mtime.remote()
-    test_get_time_delta.local()'''
+    test_get_time_delta.local()
 
     
