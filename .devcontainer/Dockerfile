@@ -6,6 +6,7 @@ FROM python:3.10-slim
 # Install pip if it's not already installed
 RUN python -m ensurepip --default-pip
 RUN pip install --upgrade pip
+RUN pip install --upgrade build twine
 
 # Install git
 RUN apt-get -y update
