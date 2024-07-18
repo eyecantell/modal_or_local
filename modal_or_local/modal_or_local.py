@@ -186,6 +186,12 @@ class ModalOrLocal:
                     list_to_return.append(filename)
         else:
             # Get the list from the local filesystem
+            if os.path.isfile(dir_full_path):
+                if return_full_paths:
+                    return [os.path.normpath(os.path.join('/', dir_full_path))]
+                else: 
+                    return [os.path.basename(dir_full_path)]
+
             for filename in sorted(os.listdir(dir_full_path)):
                 if return_full_paths:
                     list_to_return.append(str(os.path.normpath(os.path.join('/', dir_full_path, filename))))
