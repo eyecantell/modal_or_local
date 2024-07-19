@@ -76,20 +76,20 @@ class ModalOrLocalDir:
         return self.modal_or_local.write_file(new_file_full_path=self.get_full_path(new_file_relative_path), encoded_content=encoded_content, force=force)
     
     def read_file(self, file_relative_path: str) -> Any:
-        '''Load content from the given file - works on filesystem or on volume'''
-        return self.modal_or_local.read_file(new_file_full_path=self.get_full_path(file_relative_path))
+        '''Load content from the given file'''
+        return self.modal_or_local.read_file(file_full_path=self.get_full_path(file_relative_path))
     
-    def file_or_dir_exists(self, filename: str) -> bool:
+    def file_or_dir_exists(self, file_relative_path: str) -> bool:
         '''Returns true if the passed file or directory exists in our directory'''
-        return self.modal_or_local.file_or_dir_exists(full_path=self.get_full_path(filename))
+        return self.modal_or_local.file_or_dir_exists(full_path=self.get_full_path(file_relative_path))
     
-    def get_mtime(self, filename: str) -> float:
+    def get_mtime(self, file_relative_path: str) -> float:
         '''Returns modified time (in seconds since epoch) of the given file/dir in our directory'''
-        return self.modal_or_local.get_mtime(full_path=self.get_full_path(filename))
+        return self.modal_or_local.get_mtime(full_path=self.get_full_path(file_relative_path))
 
-    def get_FileEntry(self, filename: str) -> FileEntry:
+    def get_FileEntry(self, file_relative_path: str) -> FileEntry:
         '''Return a modal.volume.FileEntry for the given path (relative to our directory) if it exists.'''
-        return self.modal_or_local.get_FileEntry(full_path=self.get_full_path(filename))
+        return self.modal_or_local.get_FileEntry(full_path=self.get_full_path(file_relative_path))
     
     def remove_file_or_directory(self, relative_path: str, dne_ok : bool = False):
         '''Remove the given relative path (file or directory) from the filesystem or modal volume'''
@@ -174,11 +174,15 @@ class ModalOrLocalDir:
         return copied_files
 
 
-    def copy_file(self, source_mdir : 'ModalOrLocalDir', source_file_relative_path : str, destination_relative_path : str):
+    def copy_file(self, source_mdir : 'ModalOrLocalDir', source_file_relative_path : str, destination_relative_path : Optional[str] = None):
         '''Copy a file from source_mdir/source_file_relative_path to the destination path in this directory.
         If destination_relative_path is an existing directory or ends with '/' the file will be of the same name and placed in that directory.
+        If destination_relative_path is None or blank, the file will be copied to the same relative path it has at the source.
         Otherwise the file will be named according to the basename of destination_relative_path.
         '''
+        if not destination_relative_path: 
+            destination_relative_path = source_file_relative_path
+
         from modal_or_local.modal_or_local_copy import copy_file
         copy_file(source_mocal=source_mdir.modal_or_local, source_file_full_path=source_mdir.get_full_path(source_file_relative_path), \
                   destination_mocal=self.modal_or_local, destination_full_path=self.get_full_path(destination_relative_path))
