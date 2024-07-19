@@ -10,7 +10,7 @@ mvol2 = ModalOrLocal(volume_name="my_modal_volume2", volume_mount_dir="/volume_m
 
 
 @app.function(image=image, volumes={mvol1.volume_mount_dir: mvol1.volume})
-def do_stuff_locally():
+def do_some_stuff_locally():
     # Set local directory to work with.
     mdir_local = ModalOrLocalDir(dir_full_path="/tmp/my_local_dir")  
     # Set remote directory to work with
@@ -38,50 +38,67 @@ def do_stuff_locally():
     copied_files = mdir_local.copy_changed_files_from(mdir_on_volume, since_date=datetime.fromtimestamp(mtime))
     print(f"Copied files: {copied_files} to {mdir_local.dir_full_path}. Full list is now: {mdir_local.listdir()}")
     
-    mdir_local.remove_own_directory()
-    mdir_on_volume.remove_own_directory()
+    # Clean up
+    #mdir_local.remove_own_directory()
+    #mdir_on_volume.remove_own_directory()
     
 
 
 @app.function(image=image, volumes={mvol1.volume_mount_dir: mvol1.volume, mvol2.volume_mount_dir: mvol2.volume})
-def do_stuff_locally_or_remotely():
+def do_some_stuff_locally_or_remotely():
 
     # Set directories to work with on two different volumes
     mdir_on_volume1 = ModalOrLocalDir(dir_full_path="/volume_mnt_dir1/my_dir_on_volume_one", modal_or_local=mvol1)
     mdir_on_volume2 = ModalOrLocalDir(dir_full_path="/volume_mnt_dir2/my_dir_on_volume_two", modal_or_local=mvol2)
 
-    mdir_on_volume1.write_json_file
+    # Create a file on each volume
+    mdir_on_volume1.write_json_file("file1.json", {"a":1})
+    mdir_on_volume2.write_file("file2.txt", str("this is some text").encode(), force=True)
+
+    # Read the json file
+    metadata = mdir_on_volume1.read_json_file("file1.json")
+    print(f"Metadata from file1.json is {metadata}")
+
+    # Read the text file
+    content = mdir_on_volume2.read_file("file2.txt")
+    print("Text from file2.txt is:", content.decode('utf-8'))
+
+    # Copy a file1.json from volume1 to volume2
+    mdir_on_volume2.copy_file(mdir_on_volume1, "file1.json")
+
     print(f"Files on volume one are: {mdir_on_volume1.listdir()}")
     print(f"Files on volume two are: {mdir_on_volume2.listdir()}")
 
-    print
-
-
     # Create or remove a directory on the volume - similar to os.mkdirs() and shutil.rmtree()
-    mvol1.create_directory("/volume_mnt_dir/my/set/of/created/directories")
-    mvol1.remove_file_or_directory("/volume_mnt_dir/my/set/of/created/directories")
+    mvol1.create_directory("/volume_mnt_dir1/my/set/of/created/directories")
+    mvol1.remove_file_or_directory("/volume_mnt_dir1/my/set/of/created/directories")
 
     # List items in a directory on the volume
-    filenames = mvol1.listdir("/volume_mnt_dir")
-    print("filenames in /volume_mnt_dir are", filenames)
-    filenames_full_path = mvol1.listdir("/volume_mnt_dir", return_full_paths=True)
-    print("filenames with full path in /volume_mnt_dir are", filenames_full_path)
+    filenames = mvol1.listdir("/volume_mnt_dir1")
+    print("filenames in /volume_mnt_dir1 are", filenames)
+    filenames_full_path = mvol1.listdir("/volume_mnt_dir1", return_full_paths=True)
+    print("filenames with full path in /volume_mnt_dir1 are", filenames_full_path)
 
     # Create / overwrite a json file on the volume
     metadata = {"name": "Heather", "age": None}
-    json_file_full_path = "/volume_mnt_dir/myfile.json"
+    json_file_full_path = "/volume_mnt_dir1/myfile.json"
     mvol1.write_json_file(json_file_full_path, metadata)
 
     # Read a json file on the volume
     json_data = mvol1.read_json_file(json_file_full_path)
     print("json_data is", json_data)
 
-    # See tests/test_modal_or_local.py for more examples
+    # Clean up
+    #mdir_on_volume1.remove_own_directory()
+    #mdir_on_volume2.remove_own_directory()
+
+    # See tests/ for more examples
 
 @app.local_entrypoint()
 def main():
-    # The methods in modal_or_local will work for a modal volume whether running locally or remotely
-    do_stuff_locally.local()
-    #do_stuff_locally_or_remotely.local()
-    #do_stuff_locally_or_remotely.remote()
+    # The methods in modal_or_local will work for a modal volume whether running locally or remotely. 
+    # Of course if you need the local filesystem you will need to run locally
+    do_some_stuff_locally.local()
+    do_some_stuff_locally_or_remotely.local()
+    do_some_stuff_locally_or_remotely.remote()
     
