@@ -83,6 +83,14 @@ class ModalOrLocalDir:
         '''Returns true if the passed file or directory exists in our directory'''
         return self.modal_or_local.file_or_dir_exists(full_path=self.get_full_path(file_relative_path))
     
+    def isfile(self, file_relative_path: str) -> bool:
+        '''Returns true if the passed file exists in our directory'''
+        return self.modal_or_local.isfile(full_path=self.get_full_path(file_relative_path))
+    
+    def isdir(self, dir_relative_path: str) -> bool:
+        '''Returns true if the passed directory exists in our directory'''
+        return self.modal_or_local.isdir(full_path=self.get_full_path(dir_relative_path))
+    
     def get_mtime(self, file_relative_path: str) -> float:
         '''Returns modified time (in seconds since epoch) of the given file/dir in our directory'''
         return self.modal_or_local.get_mtime(full_path=self.get_full_path(file_relative_path))
