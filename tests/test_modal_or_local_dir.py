@@ -267,9 +267,44 @@ def test_copy_changes_from():
 
     print("Running test_copy_changes_from", "locally" if modal.is_local() else "remotely", "finished")
 
+@app.function(image=image, volumes={mocal.volume_mount_dir: mocal.volume})
+def test_listdir():
+    '''Create some files on the volume, then use listdir to verify it is working properly'''
+
+    mdir_on_volume = ModalOrLocalDir(dir_full_path=os.path.join(mocal.volume_mount_dir,"test_listdir"), modal_or_local=mocal)
+   
+    # Create some files on the volume:
+    # test_copy_changes_from/
+    #    ├── a.json
+    #    ├── b.json
+    #    └── subdir
+    #        ├── aa.json
+    #        ├── bb.json
+
+    expected_files_relative_path = []
+     # Create a.json, b.json, c.json in /test_mnt_dir/test_copy_changes_from
+    print("Creating files a.json, b.json, aa.json, bb.json on volume")
+    for prefix in ["a", "b"]:
+        test_file_on_volume_one = prefix + ".json"
+        mdir_on_volume.write_json_file(test_file_on_volume_one, {prefix:1}) 
+        assert mdir_on_volume.file_or_dir_exists(test_file_on_volume_one), f"Could not find file created on volume one {test_file_on_volume_one=}"
+        expected_files_relative_path.append(test_file_on_volume_one)
+
+    # Create aa.json, bb.json, cc.json in /test_mnt_dir_one/test_copy_file_from_volume_to_local_dir/subdir
+    for prefix in ["aa", "bb"]:
+        test_file_on_volume_one = os.path.join("subdir", prefix + ".json")
+        mdir_on_volume.write_json_file(test_file_on_volume_one, {prefix:2}) 
+        assert mdir_on_volume.file_or_dir_exists(test_file_on_volume_one), f"Could not find file created on volume one {test_file_on_volume_one=}"
+        expected_files_relative_path.append(test_file_on_volume_one)
+
+    assert sorted(mdir_on_volume.listdir()) == sorted(['subdir', 'b.json', 'a.json']), f"Expected listdir() to return ['subdir', 'b.json', 'a.json'] but got {mdir_on_volume.listdir()}"
+    assert mdir_on_volume.listdir('a.json') == ['a.json'], f"Expected listdir() to return ['a.json'] but got {mdir_on_volume.listdir('a.json')}"
+    assert sorted(mdir_on_volume.listdir('subdir')) == sorted(['bb.json', 'aa.json']), f"Expected listdir('subdir') to return ['bb.json', 'aa.json'] but got {mdir_on_volume.listdir('subdir')}"
+    assert sorted(mdir_on_volume.listdir('subdir', return_full_paths=True)) == sorted(['/test_mnt_dir/test_listdir/subdir/bb.json', '/test_mnt_dir/test_listdir/subdir/aa.json']), f"Expected mdir_on_volume.listdir('subdir', return_full_paths=True) to return ['/test_mnt_dir/test_listdir/subdir/bb.json', '/test_mnt_dir/test_listdir/subdir/aa.json'] but got {mdir_on_volume.listdir('subdir', return_full_paths=True)}"
 
 @app.local_entrypoint()
 def main():  
     test_report_changes.local()
     test_report_changes.remote()
     test_copy_changes_from.local()
+    test_listdir.local()
