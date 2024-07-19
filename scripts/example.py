@@ -12,9 +12,9 @@ mvol2 = ModalOrLocal(volume_name="my_modal_volume2", volume_mount_dir="/volume_m
 @app.function(image=image, volumes={mvol1.volume_mount_dir: mvol1.volume})
 def do_stuff_locally():
     # Set local directory to work with.
-    mdir_local = ModalOrLocalDir(dir_full_path="/my_local_dir")  
+    mdir_local = ModalOrLocalDir(dir_full_path="/tmp/my_local_dir")  
     # Set remote directory to work with
-    mdir_on_volume = ModalOrLocalDir(dir_full_path="/my_local_dir", modal_or_local=mvol1)
+    mdir_on_volume = ModalOrLocalDir(dir_full_path="/volume_mnt_dir1/my_volume_dir", modal_or_local=mvol1)
 
     # Create a json file on the volume and a text file locally
     mdir_on_volume.write_json_file("created_on_volume.json", {"a":1})
@@ -35,14 +35,27 @@ def do_stuff_locally():
     
     # Get the files from the volume that were created after created_on_volume.json was created (this will copy newer_file_on_volume.txt to the local dir)
     from datetime import datetime
-    mdir_local.copy_changed_files_from(mdir_on_volume, since_date=datetime.fromtimestamp(mtime))
+    copied_files = mdir_local.copy_changed_files_from(mdir_on_volume, since_date=datetime.fromtimestamp(mtime))
+    print(f"Copied files: {copied_files} to {mdir_local.dir_full_path}. Full list is now: {mdir_local.listdir()}")
+    
+    mdir_local.remove_own_directory()
+    mdir_on_volume.remove_own_directory()
+    
 
 
 @app.function(image=image, volumes={mvol1.volume_mount_dir: mvol1.volume, mvol2.volume_mount_dir: mvol2.volume})
 def do_stuff_locally_or_remotely():
 
-    mdir_on_volume1 = ModalOrLocalDir(dir_full_path="/my_local_dir_on_volume_one", modal_or_local=mvol1)
-    mdir_on_volume2 = ModalOrLocalDir(dir_full_path="/my_local_dir_on_volume_two", modal_or_local=mvol2)
+    # Set directories to work with on two different volumes
+    mdir_on_volume1 = ModalOrLocalDir(dir_full_path="/volume_mnt_dir1/my_dir_on_volume_one", modal_or_local=mvol1)
+    mdir_on_volume2 = ModalOrLocalDir(dir_full_path="/volume_mnt_dir2/my_dir_on_volume_two", modal_or_local=mvol2)
+
+    mdir_on_volume1.write_json_file
+    print(f"Files on volume one are: {mdir_on_volume1.listdir()}")
+    print(f"Files on volume two are: {mdir_on_volume2.listdir()}")
+
+    print
+
 
     # Create or remove a directory on the volume - similar to os.mkdirs() and shutil.rmtree()
     mvol1.create_directory("/volume_mnt_dir/my/set/of/created/directories")
@@ -68,6 +81,7 @@ def do_stuff_locally_or_remotely():
 @app.local_entrypoint()
 def main():
     # The methods in modal_or_local will work for a modal volume whether running locally or remotely
-    do_stuff.local()
-    do_stuff.remote()
+    do_stuff_locally.local()
+    #do_stuff_locally_or_remotely.local()
+    #do_stuff_locally_or_remotely.remote()
     
