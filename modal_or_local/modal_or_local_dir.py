@@ -44,6 +44,14 @@ class ModalOrLocalDir:
         if self.modal_or_local.volume and not self.modal_or_local.path_starts_with_volume_mount_dir(self.dir_full_path):
             raise RuntimeError(f"ModalOrLocalDir in volume full path expected to start with volume mount dir {self.modal_or_local.volume_name=}, {self.dir_full_path=}")
 
+    def volume_mount_dir(self):
+        '''Return a the modal_or_local.volume_mount_dir'''
+        return self.modal_or_local.volume_mount_dir
+    
+    def volume(self):
+        '''Return a the modal_or_local.volume'''
+        return self.modal_or_local.volume
+    
     def get_full_path(self, filename : str) -> str:
         '''Prepend the directory path to the given filename. File may or may not exist'''
         return os.path.join(self.dir_full_path, filename)
