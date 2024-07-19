@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional, Generator, Tuple
 
 import logging
 from datetime import datetime
+from modal.volume import FileEntry
 
 import modal_or_local.logging_config
 logger = logging.getLogger("modal_or_local." + __name__)
@@ -86,14 +87,18 @@ class ModalOrLocalDir:
         '''Returns modified time (in seconds since epoch) of the given file/dir in our directory'''
         return self.modal_or_local.get_mtime(full_path=self.get_full_path(filename))
 
-    def get_FileEntry(self, filename: str) -> float:
+    def get_FileEntry(self, filename: str) -> FileEntry:
         '''Return a modal.volume.FileEntry for the given path (relative to our directory) if it exists.'''
         return self.modal_or_local.get_FileEntry(full_path=self.get_full_path(filename))
     
-    def remove_file_or_directory(self, relative_path: str, dne_ok : bool = False) -> float:
+    def remove_file_or_directory(self, relative_path: str, dne_ok : bool = False):
         '''Remove the given relative path (file or directory) from the filesystem or modal volume'''
         return self.modal_or_local.remove_file_or_directory(file_or_dir_to_remove_full_path=self.get_full_path(relative_path), dne_ok=dne_ok)
     
+    def remove_own_directory(self, dne_ok : bool = False):
+        '''Remove the ModalOrLocalDir object's directory (self.dir_full_path) from the filesystem or modal volume'''
+        return self.modal_or_local.remove_file_or_directory(self.dir_full_path, dne_ok=dne_ok)
+        
     def walk(self) -> Generator[Tuple[str, list[str], list[str]], None, None]:
         """
         Return a generator of (dirpath, dirs, files) tuples similar to os.walk(). Uses os.walk() if not using a volume and running locally.
