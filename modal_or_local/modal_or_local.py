@@ -175,6 +175,16 @@ class ModalOrLocal:
         '''Return a (non-recursive) list of files/directories in the given path on either the filesystem or a modal volume.
         For recursive listings see walk().'''
         list_to_return = []
+
+        if self.isfile(dir_full_path):
+            if return_full_paths:
+                return [os.path.normpath(os.path.join('/', dir_full_path))]
+            else: 
+                return [os.path.basename(dir_full_path)]
+                
+        if not self.isdir(dir_full_path):
+            raise RuntimeError(f"No such file or directory: {dir_full_path}")
+
         if modal.is_local() and self.volume:
             # Remove the volume mount dir from the path if it was passed as part of the full path
             prepped_path = self.path_without_volume_mount_dir(dir_full_path, volume_mount_dir_required=True)
@@ -186,12 +196,6 @@ class ModalOrLocal:
                     list_to_return.append(filename)
         else:
             # Get the list from the local filesystem
-            if os.path.isfile(dir_full_path):
-                if return_full_paths:
-                    return [os.path.normpath(os.path.join('/', dir_full_path))]
-                else: 
-                    return [os.path.basename(dir_full_path)]
-
             for filename in sorted(os.listdir(dir_full_path)):
                 if return_full_paths:
                     list_to_return.append(str(os.path.normpath(os.path.join('/', dir_full_path, filename))))
