@@ -2,7 +2,6 @@ import modal
 import json
 import os
 from datetime import datetime
-from typing import Set
 from time import sleep, time
 from modal_or_local import setup_image, ModalOrLocal, ModalOrLocalDir
 
@@ -12,21 +11,19 @@ from modal_or_local import setup_image, ModalOrLocal, ModalOrLocalDir
 image = setup_image()
 app = modal.App("test_modal_or_local_dir")
 
-MODAL_VOLUME_NAME = "test_modal_or_local_dir_volume"
-MODAL_VOLUME_MOUNT_DIR = "/test_mnt_dir"
-mocal = ModalOrLocal(volume_name=MODAL_VOLUME_NAME, volume_mount_dir = MODAL_VOLUME_MOUNT_DIR)
+mocal = ModalOrLocal(volume_name="test_modal_or_local_dir_volume", volume_mount_dir = "/test_mnt_dir")
 
-@app.function(image=image, volumes={MODAL_VOLUME_MOUNT_DIR: mocal.volume}) 
+@app.function(image=image, volumes={mocal.volume_mount_dir: mocal.volume}) 
 def test_report_changes():
     '''Write'''
 
     print("\n\nRunning test_report_changes", "locally" if modal.is_local() else "remotely")
     
     # Define our temp dir for this test and make sure it does not yet exist
-    temp_dir = os.path.join(MODAL_VOLUME_MOUNT_DIR, "test_report_changes_dir")
+    temp_dir = os.path.join(mocal.volume_mount_dir, "test_report_changes_dir")
     if mocal.file_or_dir_exists(temp_dir) : mocal.remove_file_or_directory(temp_dir) # start fresh
 
-    mdir = ModalOrLocalDir(dir_full_path=temp_dir, volume_name=MODAL_VOLUME_NAME, volume_mount_dir=MODAL_VOLUME_MOUNT_DIR)
+    mdir = ModalOrLocalDir(dir_full_path=temp_dir, modal_or_local=mocal)
     #print(f"mdir is {mdir}")
     
     # Create the following in temp_dir:
