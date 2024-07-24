@@ -1,3 +1,1 @@
-GitPython~=3.1.40
 modal>=0.63.81
-pytest~=6.2.5
