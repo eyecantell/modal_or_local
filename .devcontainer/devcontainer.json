@@ -1,6 +1,6 @@
 {
     "name": "modal_or_local Python Development",
-    "postCreateCommand": "pip install -e . && python3 scripts/_create_modal_toml_file.py",
+    "postCreateCommand": "pdm add --dev -e . && python3 scripts/_create_modal_toml_file.py",
     
     "build": {
       "dockerfile": "Dockerfile",
