@@ -3,12 +3,11 @@
 # Use a base image with Python already installed
 FROM python:3.10-slim
 
-# Install pip if it's not already installed
+# Install pip if it's not already installed, and other packages as needed
 RUN python -m ensurepip --default-pip
 RUN pip install --upgrade pip
+RUN pip install pdm
 RUN pip install --upgrade build twine ruff
-
-# Install other python packages wanted
 RUN pip install GitPython
 RUN pip install pytest
 
