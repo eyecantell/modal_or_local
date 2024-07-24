@@ -1,0 +1,35 @@
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+name = "modal_or_local"
+version = "0.1.0"
+description = "Utilities for working with files and directories in modal volumes or the local filesystem"
+authors = [
+    {name = "Paul Wessling", email = "paul@nowfree.org"},
+]
+dependencies = [
+    "modal>=0.63.81"
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "MIT"}
+keywords = ["modal"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "GitPython"
+]
+
+[tool.pdm]
+distribution = true
+
+[project.urls]
+Repository = "https://github.com/eyecantell/modal_or_local"
+Issues = "https://github.com/eyecantell/modal_or_local/issues"
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
