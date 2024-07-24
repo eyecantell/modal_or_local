@@ -6,9 +6,11 @@ import toml
 # The .modal.toml file holds the token id and secret for running modal
 
 # Get the MODAL_TOKEN_INFO environment variable
-modal_token_info = os.getenv("MODAL_TOKEN_INFO").replace("'", '"').replace("True", "true")
+modal_token_info = (
+    os.getenv("MODAL_TOKEN_INFO").replace("'", '"').replace("True", "true")
+)
 
-#print(f"{modal_token_info=}")
+# print(f"{modal_token_info=}")
 
 # Check if the environment variable is set
 if modal_token_info:
