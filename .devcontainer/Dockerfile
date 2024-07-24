@@ -8,6 +8,10 @@ RUN python -m ensurepip --default-pip
 RUN pip install --upgrade pip
 RUN pip install --upgrade build twine ruff
 
+# Install other python packages wanted
+RUN pip install GitPython
+RUN pip install pytest
+
 # Install git
 RUN apt-get -y update
 RUN apt-get -y install git
