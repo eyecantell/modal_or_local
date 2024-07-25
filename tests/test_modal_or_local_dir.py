@@ -115,12 +115,11 @@ def test_report_changes():
     ), f"After json file edit expected new_or_modified_files:\n {expected_changes.get('new_or_modified_files')} but got\n {after_edit_changes.get('new_or_modified_files')}"
 
     # Capture the mtime so we can use it to only get the next set of new files/dirs
-    mtime = (
-        mdir.get_mtime(json_file_relative_path) + 0.001
-    )  # add a smidge to not get the file mtime was pulled from in the next set
-    sleep(1) if modal.is_local() else sleep(
-        1
-    )  # pause momentarily to make sure mtimes actually differ (unfortunately modal mtime requires 1s)
+    # Add a smidge to not get the file mtime was pulled from in the next set
+    mtime = mdir.get_mtime(json_file_relative_path) + 0.001
+
+    # pause momentarily to make sure mtimes actually differ (unfortunately modal mtime requires 1s)
+    sleep(1)
 
     # Do the following in temp_dir:
     # Create ./my_subdir/my_subdirs_subdir/new_json_file.json - path relative to temp_dir saved as <new_json_file_relative_path>
