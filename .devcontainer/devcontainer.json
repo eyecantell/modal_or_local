@@ -24,7 +24,8 @@
             "extensions": [
                 "ms-azuretools.vscode-docker",
                 "ms-python.python",
-                "be5invis.toml"
+                "be5invis.toml",
+                "GitHub.vscode-github-actions"
             ]
         }
     }
