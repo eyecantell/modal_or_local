@@ -20,7 +20,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        # Note that the tests use the same test directories so cannot be run in parallel
+        python-version: ["3.9"]
 
     steps:
     - uses: actions/checkout@v4
