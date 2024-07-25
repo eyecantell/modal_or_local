@@ -23,7 +23,7 @@ def test_mtime():
             )
         fe = myvol.listdir(new_file_path)[0]
         mydir_fe = myvol.listdir("/")[0]
-        print(f"After mydir and tmp_local.txt created, running locally")
+        print("After mydir and tmp_local.txt created, running locally")
         print(f"mtime={fe.mtime} {new_file_path} {fe}")
         print(f"mtime={mydir_fe.mtime} mydir {mydir_fe}")
         sleep(2)
@@ -39,7 +39,7 @@ def test_mtime():
         fe = myvol.listdir(new_file_path)[0]
         fe2 = myvol.listdir(new_file_path2)[0]
         mydir_fe = myvol.listdir("/")[0]
-        print(f"\nAfter tmp_local2.txt added: ")
+        print("\nAfter tmp_local2.txt added: ")
         print(f"mtime={fe.mtime} {new_file_path} {fe}")
         print(f"mtime={fe2.mtime} {new_file_path2} {fe2}")
         print(f"mtime={mydir_fe.mtime} mydir {mydir_fe}")
@@ -55,7 +55,7 @@ def test_mtime():
         with open(new_file_full_path, "wb") as f:
             f.write("file text written with open()".encode())
 
-        print(f"After mydir and tmp_remote.txt created, running remotely")
+        print("After mydir and tmp_remote.txt created, running remotely")
         for f in [new_file_full_path, "/test_mnt_dir/mydir"]:
             path = Path(f)
             print(f"mtime={path.stat().st_mtime} {path}")
@@ -65,7 +65,7 @@ def test_mtime():
         with open(new_file_full_path2, "wb") as f:
             f.write("file text written with open()".encode())
 
-        print(f"\nAfter tmp_remote2.txt added: ")
+        print("\nAfter tmp_remote2.txt added: ")
         for f in [new_file_full_path, new_file_full_path2, "/test_mnt_dir/mydir"]:
             path = Path(f)
             print(f"mtime={path.stat().st_mtime} {path}")

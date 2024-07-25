@@ -11,10 +11,12 @@ image = setup_image()
 app = modal.App("test_modal_or_local_dir")
 
 mvol1 = ModalOrLocal(
-    volume_name='test_modal_or_local_copy_volume_one', volume_mount_dir='/test_mnt_dir_one'
+    volume_name="test_modal_or_local_copy_volume_one",
+    volume_mount_dir="/test_mnt_dir_one",
 )
 mvol2 = ModalOrLocal(
-    volume_name='test_modal_or_local_copy_volume_two', volume_mount_dir='/test_mnt_dir_two'
+    volume_name="test_modal_or_local_copy_volume_two",
+    volume_mount_dir="/test_mnt_dir_two",
 )
 mlocal = ModalOrLocal()
 
@@ -23,9 +25,7 @@ mlocal = ModalOrLocal()
 #
 
 
-@app.function(
-    image=image, volumes={mvol1.volume_mount_dir: mvol1.volume}
-)
+@app.function(image=image, volumes={mvol1.volume_mount_dir: mvol1.volume})
 def test_copy_local_file_to_volume():
     """Copy a file from local filesystem to a volume. Tests modal_or_local_copy.copy_file()"""
 
@@ -53,9 +53,7 @@ def test_copy_local_file_to_volume():
     ), f"Count not find file created locally {test_file_full_path_local=}"
 
     # Set the name of the directory that will be used on the volume
-    temp_dir_volume_one = os.path.join(
-        mvol1.volume_mount_dir, temp_dir_name
-    )
+    temp_dir_volume_one = os.path.join(mvol1.volume_mount_dir, temp_dir_name)
 
     # Copy the file from the local filesystem to the modal volume, naming the destination file explicitly
     destination_file_full_path = os.path.join(
@@ -124,12 +122,8 @@ def test_copy_file_from_volume_to_volume():
 
     # Set the name of the temporary directories that will be used on volumes one and two
     temp_dir_name = "test_copy_file_from_volume_to_volume_dir"
-    temp_dir_volume_one = os.path.join(
-        mvol1.volume_mount_dir, temp_dir_name
-    )
-    temp_dir_volume_two = os.path.join(
-        mvol2.volume_mount_dir, temp_dir_name
-    )
+    temp_dir_volume_one = os.path.join(mvol1.volume_mount_dir, temp_dir_name)
+    temp_dir_volume_two = os.path.join(mvol2.volume_mount_dir, temp_dir_name)
 
     # Create a json file on volume one
     test_json_data = json.loads('{"a":1, "b":2}')
@@ -191,9 +185,7 @@ def test_copy_file_from_volume_to_volume():
     )
 
 
-@app.function(
-    image=image, volumes={mvol1.volume_mount_dir: mvol1.volume}
-)
+@app.function(image=image, volumes={mvol1.volume_mount_dir: mvol1.volume})
 def test_copy_file_from_volume_to_local():
     """Copy a file from a modal volume to the local filesystem. Tests modal_or_local_copy.copy_file()"""
     print(
@@ -208,9 +200,7 @@ def test_copy_file_from_volume_to_local():
 
     # Set the name of the temporary directories that will be used on volumes one and two
     temp_dir_name = "test_copy_file_from_volume_to_local_dir"
-    temp_dir_volume_one = os.path.join(
-        mvol1.volume_mount_dir, temp_dir_name
-    )
+    temp_dir_volume_one = os.path.join(mvol1.volume_mount_dir, temp_dir_name)
     temp_dir_local = os.path.join("/tmp", temp_dir_name)
     os.makedirs(temp_dir_local, exist_ok=True)
 
@@ -277,9 +267,7 @@ def test_copy_file_from_volume_to_local():
 #
 
 
-@app.function(
-    image=image, volumes={mvol1.volume_mount_dir: mvol1.volume}
-)
+@app.function(image=image, volumes={mvol1.volume_mount_dir: mvol1.volume})
 def test_copy_dir_from_local_to_volume():
     """Copy a populated directory from the local filesystem to a modal volume. Tests modal_or_local_copy.copy_dir()"""
 
@@ -295,11 +283,9 @@ def test_copy_dir_from_local_to_volume():
 
     # Set the name of the temporary directories that will be used locally and on volume one
     temp_dir_name = "test_copy_dir_from_local_to_volume_dir"
-    temp_dir_volume_one = os.path.join(
-        mvol1.volume_mount_dir, temp_dir_name
-    )
+    temp_dir_volume_one = os.path.join(mvol1.volume_mount_dir, temp_dir_name)
     # Start fresh
-    if mvol1.file_or_dir_exists(temp_dir_volume_one): 
+    if mvol1.file_or_dir_exists(temp_dir_volume_one):
         mvol1.remove_file_or_directory(temp_dir_volume_one)
 
     # print(f"{temp_dir_volume_one=}")
@@ -382,8 +368,12 @@ def test_copy_dir_from_local_to_volume():
     # Remove the temporary dirs and verify they are gone
     mvol1.remove_file_or_directory(temp_dir_volume_one)
     mlocal.remove_file_or_directory(temp_dir_local)
-    assert not mvol1.file_or_dir_exists(temp_dir_volume_one), f"Failed to remove {temp_dir_volume_one=}"
-    assert not mlocal.file_or_dir_exists(temp_dir_local), f"Failed to remove {temp_dir_local=}"
+    assert not mvol1.file_or_dir_exists(
+        temp_dir_volume_one
+    ), f"Failed to remove {temp_dir_volume_one=}"
+    assert not mlocal.file_or_dir_exists(
+        temp_dir_local
+    ), f"Failed to remove {temp_dir_local=}"
     print(
         "Running test_copy_dir_from_local_to_volume",
         "locally" if modal.is_local() else "remotely",
@@ -391,9 +381,7 @@ def test_copy_dir_from_local_to_volume():
     )
 
 
-@app.function(
-    image=image, volumes={mvol1.volume_mount_dir: mvol1.volume}
-)
+@app.function(image=image, volumes={mvol1.volume_mount_dir: mvol1.volume})
 def test_copy_dir_from_volume_to_local():
     """Copy a populated directory from a volume to the local filesystem. Tests modal_or_local_copy.copy_dir()"""
     print(
@@ -408,9 +396,7 @@ def test_copy_dir_from_volume_to_local():
 
     # Set the name of the temporary directories that will be used locally and on volumes one
     temp_dir_name = "test_copy_dir_from_volume_to_local_dir"
-    temp_dir_volume_one = os.path.join(
-        mvol1.volume_mount_dir, temp_dir_name
-    )
+    temp_dir_volume_one = os.path.join(mvol1.volume_mount_dir, temp_dir_name)
     # print(f"{temp_dir_volume_one=}")
     temp_dir_local = os.path.join("/tmp", temp_dir_name)
     os.makedirs(temp_dir_local, exist_ok=True)
@@ -429,9 +415,7 @@ def test_copy_dir_from_volume_to_local():
         test_file_full_path_volume_one = os.path.join(
             temp_dir_volume_one, prefix + ".json"
         )
-        mvol1.write_json_file(
-            test_file_full_path_volume_one, test_json_data
-        )
+        mvol1.write_json_file(test_file_full_path_volume_one, test_json_data)
         assert mvol1.file_or_dir_exists(
             test_file_full_path_volume_one
         ), f"Could not find file created on volume one {test_file_full_path_volume_one=}"
@@ -447,9 +431,7 @@ def test_copy_dir_from_volume_to_local():
         test_file_full_path_volume_one = os.path.join(
             temp_dir_volume_one, "subdir", prefix + ".json"
         )
-        mvol1.write_json_file(
-            test_file_full_path_volume_one, test_json_data
-        )
+        mvol1.write_json_file(test_file_full_path_volume_one, test_json_data)
         assert mvol1.file_or_dir_exists(
             test_file_full_path_volume_one
         ), f"Count not find file created on local {test_file_full_path_volume_one=}"
@@ -511,12 +493,8 @@ def test_copy():
     print("Running test_copy", "locally" if modal.is_local() else "remotely", "started")
     # Set the name of the temporary directories that will be used on volumes one and two
     temp_dir_name = "test_copy"
-    temp_dir_volume_one = os.path.join(
-        mvol1.volume_mount_dir, temp_dir_name
-    )
-    temp_dir_volume_two = os.path.join(
-        mvol2.volume_mount_dir, temp_dir_name
-    )
+    temp_dir_volume_one = os.path.join(mvol1.volume_mount_dir, temp_dir_name)
+    temp_dir_volume_two = os.path.join(mvol2.volume_mount_dir, temp_dir_name)
 
     # Copy a file from volume one to volume two
 
@@ -561,9 +539,7 @@ def test_copy():
         test_file_full_path_volume_two = os.path.join(
             dir_to_copy_full_path_volume_two, prefix + ".json"
         )
-        mvol2.write_json_file(
-            test_file_full_path_volume_two, test_json_data
-        )
+        mvol2.write_json_file(test_file_full_path_volume_two, test_json_data)
         assert mvol2.file_or_dir_exists(
             test_file_full_path_volume_two
         ), f"Could not find file created on volume two {test_file_full_path_volume_two=}"
