@@ -42,3 +42,5 @@ for r in results:
     else:
         fail_count += 1
 print(f"{success_count=}, {fail_count=}")
+
+assert fail_count < 1, f"{fail_count} tests failed"
