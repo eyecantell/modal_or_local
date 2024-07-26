@@ -1,9 +1,8 @@
 from modal_or_local import ModalOrLocal
 import os
 
-import logging
-
-logger = logging.getLogger("modal_or_local." + __name__)
+#import logging
+#logger = logging.getLogger("modal_or_local." + __name__)
 
 """
 Provides utility functions for copying files to/from modal volumes and/or the local filesystem.

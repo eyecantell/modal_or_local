@@ -5,9 +5,8 @@ from datetime import datetime
 from modal.volume import FileEntry
 from warnings import warn
 
-import logging
-
-logger = logging.getLogger("modal_or_local." + __name__)
+#import logging
+#logger = logging.getLogger("modal_or_local." + __name__)
 
 if TYPE_CHECKING:
     from modal_or_local import ModalOrLocal

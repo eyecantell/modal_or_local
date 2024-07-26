@@ -7,9 +7,8 @@ from modal.volume import FileEntry, FileEntryType
 from io import BytesIO
 from grpclib import Status, GRPCError
 
-import logging
-
-logger = logging.getLogger("modal_or_local." + __name__)
+#import logging
+#logger = logging.getLogger("modal_or_local." + __name__)
 
 
 # Class can use either local directory or a modal volume to store/retrieve files, create directories, etc.

@@ -1,6 +1,6 @@
-import logging
+#import logging
 import os
-from logging.config import dictConfig
+#from logging.config import dictConfig
 
 # Define the base directory for your application
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -46,5 +46,5 @@ LOGGING_CONFIG = {
     },
 }
 
-dictConfig(LOGGING_CONFIG)
-logger = logging.getLogger("modal_or_local." + __name__)
+#dictConfig(LOGGING_CONFIG)
+#logger = logging.getLogger("modal_or_local." + __name__)
