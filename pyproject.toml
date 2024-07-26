@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 
 [project]
 name = "modal_or_local"
-version = "0.1.0"
+version = "0.1.1"
 description = "Utilities for working with files and directories in modal volumes or the local filesystem"
 authors = [
     {name = "Paul Wessling", email = "paul@nowfree.org"},
